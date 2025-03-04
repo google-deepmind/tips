@@ -6,8 +6,7 @@ TIPS: Text-Image Pretraining with Spatial Awareness, published at ICLR 2025.
 **Quick Links:**
 [Paper](https://arxiv.org/abs/2410.16512) |
 [Pytorch Notebook](./pytorch/TIPS_Demo.ipynb) |
-[Scenic Notebook](./scenic/notebooks/TIPS_Demo.ipynb) |
-[Checkpoints](#sec:checkpoints)
+[Scenic Notebook](./scenic/notebooks/TIPS_Demo.ipynb)
 
 We provide both Pytorch and Jax (Scenic) implementations:
 
@@ -57,7 +56,7 @@ understanding, for several image-only and image-text tasks.
   >
 </p>
 
-<a id="sec:checkpoints"></a>
+
 ## Checkpoints
 We provide links to all available checkpoints, for both Pytorch and Jax model
 definitions, together with representative evals.
