@@ -5,6 +5,7 @@ TIPS: Text-Image Pretraining with Spatial Awareness, published at ICLR 2025.
 
 **Quick Links:**
 [Paper](https://arxiv.org/abs/2410.16512) |
+[Project Website](https://gdm-tips.github.io) |
 [Pytorch Notebook](./pytorch/TIPS_Demo.ipynb) |
 [Scenic Notebook](./scenic/notebooks/TIPS_Demo.ipynb)
 
