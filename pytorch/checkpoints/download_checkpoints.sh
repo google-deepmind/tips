@@ -16,7 +16,7 @@
 
 
 # The model weights can be found in https://console.cloud.google.com/storage/browser/tips_data
-ALL_CHECKPOINTS=(
+TIPS_CHECKPOINTS=(
   "tips_oss_s14_highres_distilled"
   "tips_oss_b14_highres_distilled"
   "tips_oss_l14_highres_distilled"
@@ -24,13 +24,26 @@ ALL_CHECKPOINTS=(
   "tips_oss_g14_lowres"
   "tips_oss_g14_highres"
 )
+TIPS_V2_CHECKPOINTS=(
+  "tips_v2_oss_b14"
+  "tips_v2_oss_l14"
+  "tips_v2_oss_so14"
+  "tips_v2_oss_g14"
+)
 
 echo "Downloading the tokenizer."
 wget https://storage.googleapis.com/tips_data/v1_0/checkpoints/tokenizer.model
 
-for CHECKPOINT in "${ALL_CHECKPOINTS[@]}"; do
+for CHECKPOINT in "${TIPS_CHECKPOINTS[@]}"; do
   echo "Downloading ${CHECKPOINT} (vision encoder weights)"
   wget https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/${CHECKPOINT}_vision.npz
   echo "Downloading ${CHECKPOINT} (text encoder weights)"
   wget https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/${CHECKPOINT}_text.npz
+done
+
+for CHECKPOINT in "${TIPS_V2_CHECKPOINTS[@]}"; do
+  echo "Downloading ${CHECKPOINT} (vision encoder weights)"
+  wget https://storage.googleapis.com/tips_data/v2_0/checkpoints/pytorch/${CHECKPOINT}_vision.npz
+  echo "Downloading ${CHECKPOINT} (text encoder weights)"
+  wget https://storage.googleapis.com/tips_data/v2_0/checkpoints/pytorch/${CHECKPOINT}_text.npz
 done
