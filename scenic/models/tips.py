@@ -30,6 +30,7 @@ class VisionEncoder(nn.Module):
   variant: str
   pooling: str = 'tok'
   num_cls_tokens: int = 2  # TIPS defaults to 2 CLS tokens.
+  posembs: t.Tuple[int, int] = (16, 16)
   dropout_rate: float = 0.0
   attention_dropout_rate: float = 0.0
   stochastic_depth: float = 0.0
@@ -41,6 +42,7 @@ class VisionEncoder(nn.Module):
     self.encoder = vit.ViT(
         variant=self.variant,
         num_cls_tokens=self.num_cls_tokens,
+        posembs=self.posembs,
         dropout_rate=self.dropout_rate,
         attention_dropout_rate=self.attention_dropout_rate,
         stochastic_depth=self.stochastic_depth,

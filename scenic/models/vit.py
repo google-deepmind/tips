@@ -304,6 +304,7 @@ class ViT(nn.Module):
   variant: str
   freeze_backbone: bool = False
   num_cls_tokens: int = 1
+  posembs: t.Tuple[int, int] = (16, 16)
   dropout_rate: float = 0.1
   attention_dropout_rate: float = 0.1
   stochastic_depth: float = 0.0
@@ -325,7 +326,7 @@ class ViT(nn.Module):
         patches=self.patches,
         hidden_size=self.hidden_size,
         num_cls_tokens=self.num_cls_tokens,
-        posembs=(16, 16),
+        posembs=self.posembs,
         )
     self.norm = nn.LayerNorm(name='encoder_norm')
     self.transformer = StackedTransformer(
