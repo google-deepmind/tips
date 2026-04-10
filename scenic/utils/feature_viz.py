@@ -16,6 +16,7 @@
 """Visualization helpers for features."""
 
 import typing as t
+import jax
 import jax.numpy as jnp
 import numpy as np
 from sklearn import decomposition
@@ -25,8 +26,7 @@ _ArrayLike = t.Union[np.ndarray, jnp.ndarray]
 
 
 def normalize(x, order: int = 2):
-  return x / np.linalg.norm(
-      x, ord=order, axis=-1, keepdims=True).clip(min=1e-3)
+  return x / np.linalg.norm(x, ord=order, axis=-1, keepdims=True).clip(min=1e-3)
 
 
 class PCAVisualizer:
@@ -36,20 +36,30 @@ class PCAVisualizer:
       self,
       features: _ArrayLike,
       n_samples: int = 100000,
-      n_components: int = 3) -> None:
+      n_components: int = 3,
+      whiten: bool = False,
+      normalize: bool = True,
+      use_sigmoid: bool = False,
+  ) -> None:
     """Creates a PCA object for visualizing features of shape [..., F]."""
     features = np.array(features)
-    pca_object = decomposition.PCA(n_components=n_components)
+    pca_object = decomposition.PCA(n_components=n_components, whiten=whiten)
     features = features.reshape([-1, features.shape[-1]])
     features = features[np.random.randint(0, features.shape[0], n_samples), :]
     pca_object.fit(features)
     self.pca_object = pca_object
     self.n_components = n_components
+    self.normalize = normalize
+    self.use_sigmoid = use_sigmoid
 
   def __call__(self, features: _ArrayLike) -> np.ndarray:
     """Apply PCA to features of shape [..., F]."""
     features = np.array(features)
     features_pca = self.pca_object.transform(
         features.reshape([-1, features.shape[-1]])
-        ).reshape(features.shape[:-1] + (self.n_components,))
-    return normalize(features_pca) * 0.5 + 0.5
+    ).reshape(features.shape[:-1] + (self.n_components,))
+    if self.normalize:
+      features_pca = normalize(features_pca) * 0.5 + 0.5
+    if self.use_sigmoid:
+      features_pca = np.array(jax.nn.sigmoid(features_pca * 2.0))
+    return features_pca
