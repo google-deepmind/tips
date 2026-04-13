@@ -1,58 +1,56 @@
-# TIPS: Text-Image Pretraining with Spatial awareness (ICLR 2025)
 
-This repository contains the implementation and models introduced in
-TIPS: Text-Image Pretraining with Spatial Awareness, published at ICLR 2025.
+<a href="https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_Demo.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" style="vertical-align: middle;">
+</a>
+<a href="https://google-tipsv2-gpu-explorer.hf.space/">
+  <img src="https://img.shields.io/badge/Space-HF-orange" alt="HF Space" style="vertical-align: middle;">
+</a>
+<a href="https://huggingface.co/collections/google/tipsv2">
+  <img src="https://img.shields.io/badge/Models-HF-orange" alt="Use Models on HF" style="vertical-align: middle;">
+</a>
+<a href="https://gdm-tipsv2.github.io/">
+  <img src="https://img.shields.io/badge/Webpage-yellow" alt="Webpage" style="vertical-align: middle;">
+</a>
+<a href="https://arxiv.org/abs/TODO">
+  <img src="https://img.shields.io/badge/arXiv%20(v2)-888" alt="arXiv (v2)" style="vertical-align: middle;">
+</a>
+<a href="https://arxiv.org/abs/2410.16512">
+  <img src="https://img.shields.io/badge/arXiv%20(v1)-888" alt="arXiv (v1)" style="vertical-align: middle;">
+</a>
+<br/>
 
-**Quick Links:**
-[Paper](https://arxiv.org/abs/2410.16512) |
-[Project Website](https://gdm-tips.github.io) |
-[Pytorch Notebook](./pytorch/TIPS_Demo.ipynb) |
-[Scenic Notebook](./scenic/notebooks/TIPS_Demo.ipynb)
+# TIPS / TIPSv2
+
+This repository contains the implementation and models introduced in:
+* TIPSv2: Advancing Vision-Language Pretraining with Enhanced Patch-Text Alignment, CVPR 2026
+* TIPS: Text-Image Pretraining with Spatial Awareness, ICLR 2025
 
 We provide both Pytorch and Jax (Scenic) implementations:
 
-- `tips/pytorch/`: PyTorch inference for the model. The image tower largely
-follows the official [DINOv2 definition](https://github.com/facebookresearch/dinov2).
+- `tips/pytorch/`: PyTorch inference for the model.
 - `tips/scenic/`: Jax-based inference using the
 [scenic library](https://github.com/google-research/scenic).
 
+**Overview**
+<div style="text-align: justify;">
+  TIPSv2 is the next generation of the TIPS family of foundational image-text encoders empowering strong performance across numerous multimodal and vision tasks. Our work starts by revealing a surprising finding, where distillation unlocks superior patch-text alignment over standard pretraining, leading to distilled student models significantly surpassing their much larger teachers in this capability. We carefully investigate this phenomenon, leading to an improved pretraining recipe that upgrades our vision-language encoder significantly. Three key changes are introduced to our pretraining process (illustrated in the figure below): iBOT++ extends the patch-level self-supervised loss to all tokens for stronger dense alignment; Head-only EMA reduces training cost while retaining performance; and Multi-Granularity Captions uses PaliGemma and Gemini descriptions for richer text supervision. Combining these components, TIPSv2 demonstrates strong performance across 9 tasks and 20 datasets, generally on par with or better than recent vision encoder models, with particularly strong gains in zero-shot segmentation.
+</div>
+<br/>
+
+TIPSv2 produces smoother feature maps with well-delineated objects compared to prior vision-language models (e.g., TIPS and SigLIP2). While DINOv3 also exhibits smooth feature maps, TIPSv2 shows stronger semantic focus: object boundaries are more precisely delineated and regions show granular semantic details. We compare ViT-g models of several vision encoders, except for DINOv3, where we compare with the 6× larger ViT-7B. Select an image below to explore PCA components of patch embeddings.
 <p align="center">
   <img
-    src="./docs/images/overview.png"
+    src="./docs/images/pca.png"
     style="width:75%;"
   >
 </p>
 
-**Abstract**
-<div style="text-align: justify;">
-While image-text representation learning has become very popular
-in recent years, existing models tend to lack spatial awareness and have limited
-direct applicability for dense understanding tasks. For this reason,
-self-supervised image-only pretraining is still the go-to method for many dense
-vision applications (e.g. depth estimation, semantic segmentation), despite the
-lack of explicit supervisory signals. In this paper, we close this gap between
-image-text and self-supervised learning, by proposing a novel general-purpose
-image-text model, which can be effectively used off the shelf for dense and
-global vision tasks. Our method, which we refer to as Text-Image Pretraining
-with Spatial awareness (TIPS), leverages two simple and effective insights.
-First, on textual supervision: we reveal that replacing noisy web image captions
-by synthetically generated textual descriptions boosts dense understanding
-performance significantly, due to a much richer signal for learning spatially
-aware representations. We propose an adapted training method that combines noisy
-and synthetic captions, resulting in improvements across both dense and global
-understanding tasks. Second, on the learning technique: we propose to combine
-contrastive image-text learning with self-supervised masked image modeling, to
-encourage spatial coherence, unlocking substantial enhancements for downstream
-applications. Building on these two ideas, we scale our model using the
-transformer architecture, trained on a curated set of public images. Our
-experiments are conducted on 8 tasks involving 16 datasets in total,
-demonstrating strong off-the-shelf performance on both dense and global
-understanding, for several image-only and image-text tasks.
-</div>
+
+TIPSv2 pretraining overview. TIPSv2 introduces 3 pretraining improvements: iBOT++ (enhanced MIM loss), Head-only EMA (memory-efficient self-supervised losses), and Multi-granularity captions (richer text supervision).
 
 <p align="center">
   <img
-    src="./docs/images/qualitative.png"
+    src="./docs/images/tipsv2_block.png"
     style="width:80%;"
   >
 </p>
@@ -62,14 +60,25 @@ understanding, for several image-only and image-text tasks.
 We provide links to all available checkpoints, for both Pytorch and Jax model
 definitions, together with representative evals.
 
- Model size  | #Params vision / text | Pytorch ckp.                                             | Jax ckp.                                                 | PASCAL seg.↑ | NYU-depth↓ | ImageNet-KNN↑ | UNED-KNN↑ | Flickr T→I↑ | Flickr I→T↑
-:---------- | :--------------------- | :------------------------------------------------------: | :------------------------------------------------------: | :---------: | :-------: | :----------: | :------: | :--------: | :--------:
-g/14-HR     |  1.1B / 389.1M         | [vision][pth-g14-hr-vision] \| [text][pth-g14-hr-text]   | [vision][jax-g14-hr-vision] \| [text][jax-g14-hr-text]   | 83.1        | 0.363     | 83.2         | 68.4     | 93.8       | 83.8
-g/14-LR     |  1.1B / 389.1M         | [vision][pth-g14-lr-vision] \| [text][pth-g14-lr-text]   | [vision][jax-g14-lr-vision] \| [text][jax-g14-lr-text]   | 82.0        | 0.390     | 83.6         | 71.5     | 93.4       | 82.1
-SO/14-HR    |  412.4M / 448.3M       | [vision][pth-so14-hr-vision] \| [text][pth-so14-hr-text] | [vision][jax-so14-hr-vision] \| [text][jax-so14-hr-text] | 83.7        | 0.362     | 83.0         | 68.6     | 94.2       | 83.8
-L/14-HR     |  303.2M / 183.9M       | [vision][pth-l14-hr-vision] \| [text][pth-l14-hr-text]   | [vision][jax-l14-hr-vision] \| [text][jax-l14-hr-text]   | 83.9        | 0.372     | 82.5         | 67.8     | 93.6       | 83.5
-B/14-HR     |  85.7M / 109.6M        | [vision][pth-b14-hr-vision] \| [text][pth-b14-hr-text]   | [vision][jax-b14-hr-vision] \| [text][jax-b14-hr-text]   | 82.9        | 0.379     | 80.0         | 62.7     | 91.3       | 79.4
-S/14-HR     |  21.6M / 33.6M         | [vision][pth-s14-hr-vision] \| [text][pth-s14-hr-text]   | [vision][jax-s14-hr-vision] \| [text][jax-s14-hr-text]   | 80.6        | 0.425     | 75.1         | 57.7     | 86.3       | 74.7
+### v2 models
+
+| Model size | #Params vision / text | Pytorch ckp. | Jax ckp. | PASCAL seg.↑ | NYU-depth↓ | ImageNet-KNN↑ | Flickr T→I↑ | Flickr I→T↑ | ADE150-ZS↑ |
+| :--------- | :-------------------- | :----------: | :------: | :---------: | :-------: | :----------: | :------: | :--------: | :--------: |
+| g/14       | 1.1B / 389.1M         | [vision][v2-pth-g14-vision] \| [text][v2-pth-g14-text]  | [vision][v2-jax-g14-vision] \| [text][v2-jax-g14-text]  | 85.1 | 0.334 | 83.7 | 95.1 | 85.9 | 17.8 |
+| SO/14      | 412.4M / 448.3M       | [vision][v2-pth-so14-vision] \| [text][v2-pth-so14-text]| [vision][v2-jax-so14-vision] \| [text][v2-jax-so14-text]| 85.2 | 0.339 | 82.8 | 94.8 | 84.0 | 23.3 |
+| L/14       | 303.2M / 183.9M       | [vision][v2-pth-l14-vision] \| [text][v2-pth-l14-text]  | [vision][v2-jax-l14-vision] \| [text][v2-jax-l14-text]  | 85.1 | 0.339 | 82.5 | 95.4 | 83.3 | 24.7 |
+| B/14       | 85.7M / 109.6M        | [vision][v2-pth-b14-vision] \| [text][v2-pth-b14-text]  | [vision][v2-jax-b14-vision] \| [text][v2-jax-b14-text]  | 84.0 | 0.374 | 79.8 | 92.6 | 80.0 | 17.4 |
+
+
+### v1 models
+| Model size | #Params vision / text | Pytorch ckp.                                            | Jax ckp.                                                 | PASCAL seg.↑ | NYU-depth↓ | ImageNet-KNN↑ | UNED-KNN↑ | Flickr T→I↑ | Flickr I→T↑ |
+| :--------- | :-------------------- | :------------------------------------------------------: | :------------------------------------------------------: | :---------: | :-------: | :----------: | :------: | :--------: | :--------: |
+| g/14-HR    | 1.1B / 389.1M         | [vision][v1-pth-g14-hr-vision] \| [text][v1-pth-g14-hr-text] | [vision][v1-jax-g14-hr-vision] \| [text][v1-jax-g14-hr-text] | 83.1        | 0.363     | 83.2         | 68.4     | 93.8       | 83.8       |
+| g/14-LR    | 1.1B / 389.1M         | [vision][v1-pth-g14-lr-vision] \| [text][v1-pth-g14-lr-text] | [vision][v1-jax-g14-lr-vision] \| [text][v1-jax-g14-lr-text] | 82.0        | 0.390     | 83.6         | 71.5     | 93.4       | 82.1       |
+| SO/14-HR   | 412.4M / 448.3M       | [vision][v1-pth-so14-hr-vision] \| [text][v1-pth-so14-hr-text]| [vision][v1-jax-so14-hr-vision] \| [text][v1-jax-so14-hr-text]| 83.7        | 0.362     | 83.0         | 68.6     | 94.2       | 83.8       |
+| L/14-HR    | 303.2M / 183.9M       | [vision][v1-pth-l14-hr-vision] \| [text][v1-pth-l14-hr-text] | [vision][v1-jax-l14-hr-vision] \| [text][v1-jax-l14-hr-text] | 83.9        | 0.372     | 82.5         | 67.8     | 93.6       | 83.5       |
+| B/14-HR    | 85.7M / 109.6M        | [vision][v1-pth-b14-hr-vision] \| [text][v1-pth-b14-hr-text] | [vision][v1-jax-b14-hr-vision] \| [text][v1-jax-b14-hr-text] | 82.9        | 0.379     | 80.0         | 62.7     | 91.3       | 79.4       |
+| S/14-HR    | 21.6M / 33.6M         | [vision][v1-pth-s14-hr-vision] \| [text][v1-pth-s14-hr-text] | [vision][v1-jax-s14-hr-vision] \| [text][v1-jax-s14-hr-text] | 80.6        | 0.425     | 75.1         | 57.7     | 86.3       | 74.7       |
 
 ## Using Pytorch
 
@@ -251,28 +260,46 @@ permissions and limitations under those licenses.
 
 This is not an official Google product.
 
-[jax-g14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_g14_highres_vision.npz
-[jax-g14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_g14_highres_text.npz
-[jax-g14-lr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_g14_lowres_vision.npz
-[jax-g14-lr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_g14_lowres_text.npz
-[jax-so14-hr-vision]: https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_so400m14_highres_largetext_distilled_vision.npz
-[jax-so14-hr-text]:   https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_so400m14_highres_largetext_distilled_text.npz
-[jax-l14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_l14_highres_distilled_vision.npz
-[jax-l14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_l14_highres_distilled_text.npz
-[jax-b14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_b14_highres_distilled_vision.npz
-[jax-b14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_b14_highres_distilled_text.npz
-[jax-s14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_s14_highres_distilled_vision.npz
-[jax-s14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_s14_highres_distilled_text.npz
+[v2-jax-g14-vision]:  https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_g14_vision.npz
+[v2-jax-g14-text]:    https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_g14_text.npz
+[v2-jax-so14-vision]: https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_so14_vision.npz
+[v2-jax-so14-text]:   https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_so14_text.npz
+[v2-jax-l14-vision]:  https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_l14_vision.npz
+[v2-jax-l14-text]:    https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_l14_text.npz
+[v2-jax-b14-vision]:  https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_b14_vision.npz
+[v2-jax-b14-text]:    https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_b14_text.npz
 
-[pth-g14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_g14_highres_vision.npz
-[pth-g14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_g14_highres_text.npz
-[pth-g14-lr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_g14_lowres_vision.npz
-[pth-g14-lr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_g14_lowres_text.npz
-[pth-so14-hr-vision]: https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_so400m14_highres_largetext_distilled_vision.npz
-[pth-so14-hr-text]:   https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_so400m14_highres_largetext_distilled_text.npz
-[pth-l14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_l14_highres_distilled_vision.npz
-[pth-l14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_l14_highres_distilled_text.npz
-[pth-b14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_b14_highres_distilled_vision.npz
-[pth-b14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_b14_highres_distilled_text.npz
-[pth-s14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_s14_highres_distilled_vision.npz
-[pth-s14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_s14_highres_distilled_text.npz
+[v2-pth-g14-vision]:  https://storage.googleapis.com/tips_data/v2_0/checkpoints/pytorch/tips_v2_oss_g14_vision.npz
+[v2-pth-g14-text]:    https://storage.googleapis.com/tips_data/v2_0/checkpoints/pytorch/tips_v2_oss_g14_text.npz
+[v2-pth-so14-vision]: https://storage.googleapis.com/tips_data/v2_0/checkpoints/pytorch/tips_v2_oss_so14_vision.npz
+[v2-pth-so14-text]:   https://storage.googleapis.com/tips_data/v2_0/checkpoints/pytorch/tips_v2_oss_so14_text.npz
+[v2-pth-l14-vision]:  https://storage.googleapis.com/tips_data/v2_0/checkpoints/pytorch/tips_v2_oss_l14_vision.npz
+[v2-pth-l14-text]:    https://storage.googleapis.com/tips_data/v2_0/checkpoints/pytorch/tips_v2_oss_l14_text.npz
+[v2-pth-b14-vision]:  https://storage.googleapis.com/tips_data/v2_0/checkpoints/pytorch/tips_v2_oss_b14_vision.npz
+[v2-pth-b14-text]:    https://storage.googleapis.com/tips_data/v2_0/checkpoints/pytorch/tips_v2_oss_b14_text.npz
+
+[v1-jax-g14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_g14_highres_vision.npz
+[v1-jax-g14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_g14_highres_text.npz
+[v1-jax-g14-lr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_g14_lowres_vision.npz
+[v1-jax-g14-lr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_g14_lowres_text.npz
+[v1-jax-so14-hr-vision]: https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_so400m14_highres_largetext_distilled_vision.npz
+[v1-jax-so14-hr-text]:   https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_so400m14_highres_largetext_distilled_text.npz
+[v1-jax-l14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_l14_highres_distilled_vision.npz
+[v1-jax-l14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_l14_highres_distilled_text.npz
+[v1-jax-b14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_b14_highres_distilled_vision.npz
+[v1-jax-b14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_b14_highres_distilled_text.npz
+[v1-jax-s14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_s14_highres_distilled_vision.npz
+[v1-jax-s14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/scenic/tips_oss_s14_highres_distilled_text.npz
+
+[v1-pth-g14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_g14_highres_vision.npz
+[v1-pth-g14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_g14_highres_text.npz
+[v1-pth-g14-lr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_g14_lowres_vision.npz
+[v1-pth-g14-lr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_g14_lowres_text.npz
+[v1-pth-so14-hr-vision]: https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_so400m14_highres_largetext_distilled_vision.npz
+[v1-pth-so14-hr-text]:   https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_so400m14_highres_largetext_distilled_text.npz
+[v1-pth-l14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_l14_highres_distilled_vision.npz
+[v1-pth-l14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_l14_highres_distilled_text.npz
+[v1-pth-b14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_b14_highres_distilled_vision.npz
+[v1-pth-b14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_b14_highres_distilled_text.npz
+[v1-pth-s14-hr-vision]:  https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_s14_highres_distilled_vision.npz
+[v1-pth-s14-hr-text]:    https://storage.googleapis.com/tips_data/v1_0/checkpoints/pytorch/tips_oss_s14_highres_distilled_text.npz
