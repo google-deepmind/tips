@@ -20,9 +20,8 @@ import ml_collections
 _MEAN_RGB = [0., 0., 0.]
 _STDDEV_RGB = [1., 1., 1.]
 
-# The 'g' variant refers to the DINO-v2 'giant2', which differs from ViT-g.
-# The differences are highlighted in https://arxiv.org/pdf/2304.07193 Section 5.
-_VARIANT_DICT = {
+# TIPS-v1 models.
+_VARIANT_DICT_V1 = {
     'tips_oss_g14_highres': 'g/14',
     'tips_oss_g14_lowres': 'g/14',
     'tips_oss_so400m14_highres_largetext_distilled': 'So400m/14',
@@ -31,23 +30,45 @@ _VARIANT_DICT = {
     'tips_oss_s14_highres_distilled': 'S/14',
 }
 
+# TIPS-v2 models.
+_VARIANT_DICT_V2 = {
+    'tips_v2_g14': 'g/14',
+    'tips_v2_so14': 'So400m/14',
+    'tips_v2_l14': 'L/14',
+    'tips_v2_b14': 'B/14',
+}
+
 
 def get_config(variant: str):
   """Returns the TIPS model config."""
   config = ml_collections.ConfigDict()
-  if variant not in _VARIANT_DICT:
+
+  if variant in _VARIANT_DICT_V1:
+    config.variant = _VARIANT_DICT_V1[variant]
+    pos_embed_shape = (16, 16)
+  elif variant in _VARIANT_DICT_V2:
+    config.variant = _VARIANT_DICT_V2[variant]
+    pos_embed_shape = (32, 32)
+  else:
+    all_variants = list(_VARIANT_DICT_V1.keys()) + list(_VARIANT_DICT_V2.keys())
     raise ValueError(
         f'Unknown TIPS variant: {variant}. Please choose one of: '
-        f'{list(_VARIANT_DICT.keys())}')
+        f'{all_variants}')
 
-  config.variant = _VARIANT_DICT[variant]
   config.rgb_mean = _MEAN_RGB
   config.rgb_std = _STDDEV_RGB
 
   config.pooling = 'tok'
   config.pos_interpolation_method = 'bilinear'
 
+  config.positional_embedding = ml_collections.ConfigDict()
+  config.positional_embedding.shape = pos_embed_shape
+
   # TIPS defaults to 2 CLS tokens.
   config.num_cls_tokens = 2
+
+  # TIPS text encoder config.
+  config.text_max_seq_length = 64
+  config.text_vocab_size = 32000
 
   return config
