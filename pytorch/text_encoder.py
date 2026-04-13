@@ -333,7 +333,7 @@ class TextEncoder(nn.Module):
     x = self.token_embedding(ids)
     if self.scale_sqrt_depth:
       x = x * (self.embedding_dim**0.5)
-    x = x + self.pos_embedder(seq_length=seq_length)
+    x = x + self.pos_embedder(seq_length=seq_length).to(x.device)
     x = x.permute(1, 0, 2)  # NLD -> LND
     x = self.transformer(x, mask)
     x = x.permute(1, 0, 2)  # LND -> NLD
