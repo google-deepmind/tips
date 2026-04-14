@@ -1,5 +1,5 @@
 [![Demo-Colab-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_Demo.ipynb)
-[![Demo-HF](https://img.shields.io/badge/Demo-HF-orange)](https://google-tipsv2-gpu-explorer.hf.space/)
+[![Demo-HF](https://img.shields.io/badge/Demo-HF-orange)](https://huggingface.co/spaces/google/TIPSv2)
 [![Models-HF](https://img.shields.io/badge/Models-HF-orange)](https://huggingface.co/collections/google/tipsv2)
 [![Webpage](https://img.shields.io/badge/Webpage-yellow)](https://gdm-tipsv2.github.io/)
 [![Paper](https://img.shields.io/badge/v2-arXiv.XXXX.YYYYY-B3181B.svg)](https://arxiv.org/abs/XXXX.YYYYY)
@@ -67,7 +67,7 @@ definitions, together with representative evals.
 
 ## Demos
 
-[![Demo-HF](https://img.shields.io/badge/Demo-HF-orange)](https://google-tipsv2-gpu-explorer.hf.space/): Demo on Zero-shot segmentation / Depth and Normals / Feature visualization / Supervised seg <br>
+[![Demo-HF](https://img.shields.io/badge/Demo-HF-orange)](https://huggingface.co/spaces/google/TIPSv2): Demo on Zero-shot segmentation / Depth and Normals / Feature visualization / Supervised seg <br>
 [![Inference-Colab-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_Demo.ipynb): Inference Colab in Pytorch <br>
 [![Inference-Colab-Jax](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/scenic/notebooks/TIPS_Demo.ipynb): Inference Colab in Jax <br>
 
