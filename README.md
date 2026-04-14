@@ -2,8 +2,8 @@
 [![Demo-HF](https://img.shields.io/badge/Demo-HF-orange)](https://huggingface.co/spaces/google/TIPSv2)
 [![Models-HF](https://img.shields.io/badge/Models-HF-orange)](https://huggingface.co/collections/google/tipsv2)
 [![Webpage](https://img.shields.io/badge/Webpage-yellow)](https://gdm-tipsv2.github.io/)
-[![Paper](https://img.shields.io/badge/v2-arXiv.XXXX.YYYYY-B3181B.svg)](https://arxiv.org/abs/XXXX.YYYYY)
-[![Paper](https://img.shields.io/badge/v1-arXiv.2410.16512-B3181B.svg)](https://arxiv.org/abs/2410.16512)
+[![Paper](https://img.shields.io/badge/TIPSv2-arXiv.XXXX.YYYYY-B3181B.svg)](https://arxiv.org/abs/XXXX.YYYYY)
+[![Paper](https://img.shields.io/badge/TIPSv1-arXiv.2410.16512-B3181B.svg)](https://arxiv.org/abs/2410.16512)
 <br/>
 
 # TIPS / TIPSv2
