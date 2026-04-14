@@ -13,12 +13,28 @@
 # limitations under the License.
 # ==============================================================================
 
-r"""Running TIPS (https://arxiv.org/abs/2410.16512) ViT-g model inference.
+r"""Running TIPS / TIPSv2 image encoder inference.
 
-Usage:
+Supports both TIPSv1 and TIPSv2 model variants.  TIPSv2 models use a (32, 32)
+positional-embedding grid instead of (16, 16).  An optional ``--decoder_path``
+flag enables DPT-based dense prediction (segmentation, depth, or normals).
+
+Usage (encoder only):
 ```python
-python run_image_encoder_inference.py --model_path=${PATH_TO_LOW_RES_CHECKPOINT} \
-    --image_file=${PATH_TO_IMAGE} --is_low_res --model_variant=g
+python run_image_encoder_inference.py \
+    --model_path=${PATH_TO_CHECKPOINT} \
+    --image_file=${PATH_TO_IMAGE} \
+    --model_variant=g
+```
+
+Usage (encoder + DPT decoder for segmentation):
+```python
+python run_image_encoder_inference.py \
+    --model_path=${PATH_TO_CHECKPOINT} \
+    --image_file=${PATH_TO_IMAGE} \
+    --model_variant=L \
+    --decoder_path=${PATH_TO_DECODER_CHECKPOINT} \
+    --decoder_task=segmentation
 ```
 """
 
@@ -36,6 +52,31 @@ IMAGE_MEAN = (0, 0, 0)
 IMAGE_STD = (1.0, 1.0, 1.0)
 PATCH_SIZE = 14
 
+# Mapping from model variant to (embed_dim, post_process_channels).
+_DECODER_CONFIGS = {
+    'S': (384, (48, 96, 192, 384)),
+    'B': (768, (96, 192, 384, 768)),
+    'L': (1024, (128, 256, 512, 1024)),
+    'So400m': (1152, (144, 288, 576, 1152)),
+    'g': (1536, (192, 384, 768, 1536)),
+}
+
+# Number of output channels per decoder task.
+_DECODER_TASK_OUT_CHANNELS = {
+    'segmentation': 150,  # ADE20K classes
+    'depth': 1,
+    'normals': 3,
+}
+
+# Which intermediate layers to extract for the 4-level DPT head.
+_INTERMEDIATE_LAYERS = {
+    'S': [2, 5, 8, 11],
+    'B': [2, 5, 8, 11],
+    'L': [4, 11, 17, 23],
+    'So400m': [5, 13, 20, 26],
+    'g': [9, 19, 29, 39],
+}
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     '--model_path', default=None, required=True, help='The path to the model.'
@@ -49,13 +90,26 @@ parser.add_argument(
 parser.add_argument(
     '--is_low_res',
     action='store_true',
-    help='Whether the model is low-resolution.',
+    help='Whether the model is low-resolution (224px instead of 448px).',
 )
 parser.add_argument(
     '--model_variant',
     default=None,
     required=True,
+    choices=['S', 'B', 'L', 'So400m', 'g'],
     help='The variant of the model.',
+)
+parser.add_argument(
+    '--decoder_path',
+    default=None,
+    help='Optional path to a DPT decoder checkpoint (.npz).  '
+         'When provided, runs dense prediction on top of the encoder.',
+)
+parser.add_argument(
+    '--decoder_task',
+    default='segmentation',
+    choices=list(_DECODER_TASK_OUT_CHANNELS.keys()),
+    help='Dense prediction task (only used when --decoder_path is set).',
 )
 
 
@@ -77,7 +131,7 @@ def main(args):
   for key in checkpoint:
     checkpoint[key] = torch.tensor(checkpoint[key])
 
-  # Run inference on the image.
+  # Read and pre-process the image.
   with open(args.image_file, 'rb') as fd:
     image_bytes = io.BytesIO(fd.read())
     pil_image = Image.open(image_bytes)
@@ -101,7 +155,9 @@ def main(args):
     )
     model.load_state_dict(checkpoint)
 
-    # Compute embeddings from two CLS tokens.
+    # ------------------------------------------------------------------
+    # Encoder-only: compute CLS token embeddings.
+    # ------------------------------------------------------------------
     outputs = model(input_batch)
     first_cls_token = outputs[0].detach().numpy().squeeze()
     second_cls_token = outputs[1].detach().numpy().squeeze()
@@ -114,6 +170,43 @@ def main(args):
     ).clip(min=1e-3)
     print('First cls token: ', first_cls_token.tolist())
     print('Second cls token: ', second_cls_token.tolist())
+
+    # ------------------------------------------------------------------
+    # Optional: DPT decoder for dense prediction.
+    # ------------------------------------------------------------------
+    if args.decoder_path is not None:
+      from tips.pytorch.decoders import Decoder, load_decoder_weights  # pylint: disable=g-import-not-at-top
+
+      embed_dim, ppc = _DECODER_CONFIGS[args.model_variant]
+      out_channels = _DECODER_TASK_OUT_CHANNELS[args.decoder_task]
+      layer_ids = _INTERMEDIATE_LAYERS[args.model_variant]
+
+      # Extract intermediate features with class tokens.
+      intermediate = model.get_intermediate_layers(
+          input_batch,
+          n=layer_ids,
+          reshape=True,
+          return_class_token=True,
+      )
+      # intermediate is a tuple of (patch_tokens, cls_token) per layer.
+      intermediate_features = [
+          (cls.unsqueeze(1), patches) for patches, cls in intermediate
+      ]
+
+      decoder = Decoder(
+          out_channels=out_channels,
+          input_embed_dim=embed_dim,
+          post_process_channels=ppc,
+      )
+      decoder = load_decoder_weights(decoder, args.decoder_path)
+      decoder.eval()
+
+      original_size = (pil_image.height, pil_image.width)
+      dense_output = decoder(intermediate_features, image_size=original_size)
+      print(
+          f'Dense prediction ({args.decoder_task}): '
+          f'shape={tuple(dense_output.shape)}'
+      )
 
 
 if __name__ == '__main__':

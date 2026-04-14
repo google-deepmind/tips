@@ -13,7 +13,19 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Runs TIPS inference."""
+"""Runs TIPS / TIPSv2 inference.
+
+Supports both TIPSv1 and TIPSv2 model variants.  TIPSv2 models use a
+(32, 32) positional-embedding grid instead of (16, 16).
+
+Usage (TIPSv1):
+  python run_tips_inference.py --variant=tips_oss_b14_highres_distilled \
+      --checkpoint_dir=checkpoints/ --image_path=images/example.jpg
+
+Usage (TIPSv2):
+  python run_tips_inference.py --variant=tips_v2_b14 \
+      --checkpoint_dir=checkpoints/ --image_path=images/example.jpg
+"""
 
 import argparse
 import os
@@ -30,6 +42,21 @@ from tips.scenic.models import tips
 from tips.scenic.utils import checkpoint
 from tips.scenic.utils import feature_viz
 
+# All supported variants (TIPSv1 + TIPSv2).
+_ALL_VARIANTS = (
+    # TIPSv1
+    'tips_oss_g14_highres',
+    'tips_oss_g14_lowres',
+    'tips_oss_so400m14_highres_largetext_distilled',
+    'tips_oss_l14_highres_distilled',
+    'tips_oss_b14_highres_distilled',
+    'tips_oss_s14_highres_distilled',
+    # TIPSv2
+    'tips_v2_g14',
+    'tips_v2_so14',
+    'tips_v2_l14',
+    'tips_v2_b14',
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -42,14 +69,7 @@ parser.add_argument(
     '--variant',
     type=str,
     default='tips_oss_b14_highres_distilled',
-    choices=(
-        'tips_oss_g14_highres',
-        'tips_oss_g14_lowres',
-        'tips_oss_so400m14_highres_largetext_distilled',
-        'tips_oss_l14_highres_distilled',
-        'tips_oss_b14_highres_distilled',
-        'tips_oss_s14_highres_distilled',
-    ),
+    choices=_ALL_VARIANTS,
     help='Model variant.',
 )
 parser.add_argument(
@@ -75,6 +95,7 @@ def main() -> None:
   image_path = args.image_path
 
   # Load the model configuration.
+  # TIPSv2 variants automatically get (32, 32) positional embeddings.
   model_config = tips_model_config.get_config(variant)
 
   # Load the vision encoder.

@@ -13,14 +13,24 @@
 # limitations under the License.
 # ==============================================================================
 
-r"""Running TIPS (https://arxiv.org/abs/2410.16512) text encoder inference.
+r"""Running TIPS / TIPSv2 text encoder inference.
+
+Supports both TIPSv1 and TIPSv2 model variants.  The text encoder
+architecture is the same across versions; only the hidden sizes differ
+per vision-tower variant.
 
 Usage:
 ```python
-python run_text_encoder_inference.py --model_path=${PATH_TO_LOW_RES_CHECKPOINT} \
-    --model_variant=g --tokenizer_path=${PATH_TO_TOKENIZER} \
+python run_text_encoder_inference.py \
+    --model_path=${PATH_TO_TEXT_CHECKPOINT} \
+    --model_variant=g \
+    --tokenizer_path=${PATH_TO_TOKENIZER} \
     --text_input="Hello world."
 ```
+
+TIPSv2 variants use the same text encoder configs as TIPSv1 for
+corresponding sizes (B, L, So400m, g).  If you are using a TIPSv2
+checkpoint, simply pass the matching variant letter.
 """
 
 import argparse
@@ -40,7 +50,8 @@ parser.add_argument(
     '--model_variant',
     default=None,
     required=True,
-    help='The variant of the model.',
+    choices=['S', 'B', 'L', 'So400m', 'g'],
+    help='The variant of the model (same letter for TIPSv1 and TIPSv2).',
 )
 parser.add_argument(
     '--tokenizer_path',
@@ -57,15 +68,24 @@ parser.add_argument(
 
 
 def get_config(v: str):
+  """Returns the text-encoder config for a given variant letter.
+
+  The text tower architecture is shared between TIPSv1 and TIPSv2 for the
+  same backbone size.
+  """
   return {
-      'hidden_size': {'S': 384, 'B': 768, 'L': 1024, 'So400m': 1152, 'g': 1536}[
-          v
-      ],
-      'mlp_dim': {'S': 1536, 'B': 3072, 'L': 4096, 'So400m': 4304, 'g': 6144}[
-          v
-      ],
-      'num_heads': {'S': 6, 'B': 12, 'L': 16, 'So400m': 16, 'g': 24}[v],
-      'num_layers': {'S': 12, 'B': 12, 'L': 12, 'So400m': 27, 'g': 12}[v],
+      'hidden_size': {
+          'S': 384, 'B': 768, 'L': 1024, 'So400m': 1152, 'g': 1536,
+      }[v],
+      'mlp_dim': {
+          'S': 1536, 'B': 3072, 'L': 4096, 'So400m': 4304, 'g': 6144,
+      }[v],
+      'num_heads': {
+          'S': 6, 'B': 12, 'L': 16, 'So400m': 16, 'g': 24,
+      }[v],
+      'num_layers': {
+          'S': 12, 'B': 12, 'L': 12, 'So400m': 27, 'g': 12,
+      }[v],
   }
 
 
