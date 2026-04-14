@@ -208,12 +208,12 @@ class DPTHead(nn.Module):
 class Decoder(nn.Module):
   """Base decoder class for dense prediction tasks.
 
-  Wraps a DPTHead and provides a common interface. Subclasses add a
-  task-specific output head (e.g. segmentation logits, depth regression).
+  Wraps a DPTHead and provides a task-specific output head.
   """
 
   def __init__(
       self,
+      out_channels: int,
       input_embed_dim: int = 1024,
       channels: int = 256,
       post_process_channels: Tuple[int, ...] = (128, 256, 512, 1024),
@@ -221,114 +221,59 @@ class Decoder(nn.Module):
   ) -> None:
     super().__init__()
     self.channels = channels
+    self.out_channels = out_channels
     self.dpt = DPTHead(
         input_embed_dim=input_embed_dim,
         channels=channels,
         post_process_channels=post_process_channels,
         readout_type=readout_type,
     )
+    # Common head for all dense prediction tasks
+    self.head = nn.Linear(self.channels, self.out_channels)
 
   def forward(
       self,
       intermediate_features: List[Tuple[torch.Tensor, torch.Tensor]],
       image_size: Optional[Tuple[int, int]] = None,
   ) -> torch.Tensor:
-    """Returns dense features from the DPT head (B, C, H', W')."""
-    return self.dpt(intermediate_features)
+    """Produces task-specific predictions (B, out_channels, H, W)."""
+    # 1. Get dense features from DPT (B, C, H', W')
+    x = self.dpt(intermediate_features)  
+    
+    # 2. Apply task head (Requires channel-last format for nn.Linear)
+    x = x.permute(0, 2, 3, 1)            # (B, H', W', C)
+    x = self.head(x)                     # (B, H', W', out_channels)
+    x = x.permute(0, 3, 1, 2)            # (B, out_channels, H', W')
+    
+    # 3. Upsample to target resolution
+    if image_size is not None:
+      x = F.interpolate(
+          x, size=image_size, mode="bilinear", align_corners=False
+      )
+    return x
 
 
 # ---------------------------------------------------------------------------
-# Task-specific decoders
+# Task-specific decoders (Refactored as Thin Wrappers)
 # ---------------------------------------------------------------------------
 
 
 class SegmentationDecoder(Decoder):
-  """Decoder for semantic segmentation.
-
-  Produces per-pixel class logits of shape (B, num_classes, H, W).
-  """
-
-  def __init__(
-      self,
-      num_classes: int = 150,
-      **kwargs,
-  ) -> None:
-    super().__init__(**kwargs)
-    self.num_classes = num_classes
-    self.head = nn.Linear(self.channels, num_classes)
-
-  def forward(
-      self,
-      intermediate_features: List[Tuple[torch.Tensor, torch.Tensor]],
-      image_size: Optional[Tuple[int, int]] = None,
-  ) -> torch.Tensor:
-    x = self.dpt(intermediate_features)  # (B, C, H', W')
-    x = x.permute(0, 2, 3, 1)  # (B, H', W', C)
-    x = self.head(x)  # (B, H', W', num_classes)
-    x = x.permute(0, 3, 1, 2)  # (B, num_classes, H', W')
-    if image_size is not None:
-      x = F.interpolate(
-          x, size=image_size, mode="bilinear", align_corners=False
-      )
-    return x
+  """Decoder for semantic segmentation."""
+  def __init__(self, num_classes: int = 150, **kwargs) -> None:
+    super().__init__(out_channels=num_classes, **kwargs)
 
 
 class DepthDecoder(Decoder):
-  """Decoder for monocular depth prediction.
-
-  Produces per-pixel depth values of shape (B, 1, H, W).
-  """
-
-  def __init__(
-      self,
-      **kwargs,
-  ) -> None:
-    super().__init__(**kwargs)
-    self.head = nn.Linear(self.channels, 1)
-
-  def forward(
-      self,
-      intermediate_features: List[Tuple[torch.Tensor, torch.Tensor]],
-      image_size: Optional[Tuple[int, int]] = None,
-  ) -> torch.Tensor:
-    x = self.dpt(intermediate_features)  # (B, C, H', W')
-    x = x.permute(0, 2, 3, 1)  # (B, H', W', C)
-    x = self.head(x)  # (B, H', W', 1)
-    x = x.permute(0, 3, 1, 2)  # (B, 1, H', W')
-    if image_size is not None:
-      x = F.interpolate(
-          x, size=image_size, mode="bilinear", align_corners=False
-      )
-    return x
+  """Decoder for monocular depth prediction."""
+  def __init__(self, **kwargs) -> None:
+    super().__init__(out_channels=1, **kwargs)
 
 
 class NormalsDecoder(Decoder):
-  """Decoder for surface normals prediction.
-
-  Produces per-pixel 3D normal vectors of shape (B, 3, H, W).
-  """
-
-  def __init__(
-      self,
-      **kwargs,
-  ) -> None:
-    super().__init__(**kwargs)
-    self.head = nn.Linear(self.channels, 3)
-
-  def forward(
-      self,
-      intermediate_features: List[Tuple[torch.Tensor, torch.Tensor]],
-      image_size: Optional[Tuple[int, int]] = None,
-  ) -> torch.Tensor:
-    x = self.dpt(intermediate_features)  # (B, C, H', W')
-    x = x.permute(0, 2, 3, 1)  # (B, H', W', C)
-    x = self.head(x)  # (B, H', W', 3)
-    x = x.permute(0, 3, 1, 2)  # (B, 3, H', W')
-    if image_size is not None:
-      x = F.interpolate(
-          x, size=image_size, mode="bilinear", align_corners=False
-      )
-    return x
+  """Decoder for surface normals prediction."""
+  def __init__(self, **kwargs) -> None:
+    super().__init__(out_channels=3, **kwargs)
 
 
 # ---------------------------------------------------------------------------
