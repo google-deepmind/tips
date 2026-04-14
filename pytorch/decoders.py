@@ -272,9 +272,7 @@ class DepthDecoder(Decoder):
     super().__init__(out_channels=256, **kwargs)
     self.min_depth = min_depth
     self.max_depth = max_depth
-    self.register_buffer(
-        "bin_centers", torch.linspace(min_depth, max_depth, 256)
-    )
+
 
   def forward(
       self,
@@ -289,9 +287,10 @@ class DepthDecoder(Decoder):
     # Normalize to probabilities along the channel dimension
     probs = logits / torch.sum(logits, dim=1, keepdim=True)
     # Compute expectation: sum(prob * bin_center)
-    depth_map = torch.einsum(
-        "bchw,c->bhw", probs, self.bin_centers.to(logits.device)
+    bin_centers = torch.linspace(
+        self.min_depth, self.max_depth, 256, device=logits.device, dtype=logits.dtype
     )
+    depth_map = torch.einsum("bchw,c->bhw", probs, bin_centers)
     if image_size is not None:
       depth_map = F.interpolate(
           depth_map.unsqueeze(1), size=image_size, mode="bilinear", align_corners=False
