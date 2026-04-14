@@ -15,7 +15,6 @@
 """DPT decoder heads for dense prediction tasks (segmentation, depth, etc.)."""
 
 from typing import Optional, Tuple
-
 import numpy as np
 import torch
 from torch import nn
@@ -129,8 +128,8 @@ class ReassembleBlocks(nn.Module):
     return out
 
 
-class DPTSegmentationHead(nn.Module):
-  """Full DPT head + segmentation decoder."""
+class DPTHead(nn.Module):
+  """DPT head producing dense features."""
 
   def __init__(
       self,
@@ -138,7 +137,6 @@ class DPTSegmentationHead(nn.Module):
       channels: int = 256,
       post_process_channels: Tuple[int, ...] = (128, 256, 512, 1024),
       readout_type: str = "project",
-      num_classes: int = 150,
   ) -> None:
     super().__init__()
     self.reassemble = ReassembleBlocks(
@@ -157,12 +155,10 @@ class DPTSegmentationHead(nn.Module):
         FeatureFusionBlock(channels, has_residual=True),
     ])
     self.project = nn.Conv2d(channels, channels, 3, padding=1, bias=True)
-    self.segmentation_head = nn.Linear(channels, num_classes)
 
   def forward(
       self,
       intermediate_features: list[tuple[torch.Tensor, torch.Tensor]],
-      image_size: Optional[Tuple[int, int]] = None,
   ) -> torch.Tensor:
     x = self.reassemble(intermediate_features)
     x = [self.convs[i](feat) for i, feat in enumerate(x)]
@@ -172,34 +168,124 @@ class DPTSegmentationHead(nn.Module):
       out = self.fusion_blocks[i](out, residual=x[-(i + 1)])
 
     out = self.project(out)
-    out = out.permute(0, 2, 3, 1)
-    out = self.segmentation_head(out)  # (B, H, W, num_classes)
-
-    if image_size is not None:
-      out = out.permute(0, 3, 1, 2)
-      out = F.interpolate(
-          out, size=image_size, mode="bilinear", align_corners=False
-      )
-    else:
-      out = out.permute(0, 3, 1, 2)
     return out
 
 
-def load_segmentation_weights(
-    model: DPTSegmentationHead,
+class Decoder(nn.Module):
+  """Base decoder class for dense prediction tasks."""
+
+  def __init__(
+      self,
+      input_embed_dim: int = 1024,
+      channels: int = 256,
+      post_process_channels: Tuple[int, ...] = (128, 256, 512, 1024),
+      readout_type: str = "project",
+  ) -> None:
+    super().__init__()
+    self.dpt = DPTHead(
+        input_embed_dim=input_embed_dim,
+        channels=channels,
+        post_process_channels=post_process_channels,
+        readout_type=readout_type,
+    )
+
+  def forward(
+      self,
+      intermediate_features: list[tuple[torch.Tensor, torch.Tensor]],
+  ) -> torch.Tensor:
+    return self.dpt(intermediate_features)
+
+
+class SegmentationDecoder(Decoder):
+  """Decoder for semantic segmentation."""
+
+  def __init__(
+      self,
+      num_classes: int = 150,
+      **kwargs,
+  ) -> None:
+    super().__init__(**kwargs)
+    channels = kwargs.get("channels", 256)
+    self.head = nn.Linear(channels, num_classes)
+
+  def forward(
+      self,
+      intermediate_features: list[tuple[torch.Tensor, torch.Tensor]],
+      image_size: Optional[Tuple[int, int]] = None,
+  ) -> torch.Tensor:
+    x = super().forward(intermediate_features)
+    x = x.permute(0, 2, 3, 1)
+    x = self.head(x)
+    x = x.permute(0, 3, 1, 2)
+    if image_size is not None:
+      x = F.interpolate(
+          x, size=image_size, mode="bilinear", align_corners=False
+      )
+    return x
+
+
+class DepthDecoder(Decoder):
+  """Decoder for depth prediction."""
+
+  def __init__(
+      self,
+      **kwargs,
+  ) -> None:
+    super().__init__(**kwargs)
+    channels = kwargs.get("channels", 256)
+    self.head = nn.Linear(channels, 1)
+
+  def forward(
+      self,
+      intermediate_features: list[tuple[torch.Tensor, torch.Tensor]],
+      image_size: Optional[Tuple[int, int]] = None,
+  ) -> torch.Tensor:
+    x = super().forward(intermediate_features)
+    x = x.permute(0, 2, 3, 1)
+    x = self.head(x)
+    x = x.permute(0, 3, 1, 2)
+    if image_size is not None:
+      x = F.interpolate(
+          x, size=image_size, mode="bilinear", align_corners=False
+      )
+    return x
+
+
+class NormalsDecoder(Decoder):
+  """Decoder for surface normals."""
+
+  def __init__(
+      self,
+      **kwargs,
+  ) -> None:
+    super().__init__(**kwargs)
+    channels = kwargs.get("channels", 256)
+    self.head = nn.Linear(channels, 3)
+
+  def forward(
+      self,
+      intermediate_features: list[tuple[torch.Tensor, torch.Tensor]],
+      image_size: Optional[Tuple[int, int]] = None,
+  ) -> torch.Tensor:
+    x = super().forward(intermediate_features)
+    x = x.permute(0, 2, 3, 1)
+    x = self.head(x)
+    x = x.permute(0, 3, 1, 2)
+    if image_size is not None:
+      x = F.interpolate(
+          x, size=image_size, mode="bilinear", align_corners=False
+      )
+    return x
+
+
+def load_decoder_weights(
+    model: Decoder,
     checkpoint_path: str,
-) -> DPTSegmentationHead:
-  """Load pre-converted PyTorch weights into a DPTSegmentationHead.
-
-  The checkpoint should be an .npz file where keys match the model's
-  state_dict parameter names and values are NumPy arrays in PyTorch layout
-  (already transposed from Flax/JAX format).
-
-  Use `scripts/convert_segmentation_checkpoint.py` to produce these
-  checkpoints from the original Flax/JAX .zip files.
+) -> Decoder:
+  """Load pre-converted PyTorch weights into a Decoder.
 
   Args:
-    model: A DPTSegmentationHead instance.
+    model: A Decoder instance (SegmentationDecoder, DepthDecoder, etc.).
     checkpoint_path: Path to a .npz checkpoint file.
 
   Returns:
@@ -208,7 +294,20 @@ def load_segmentation_weights(
   weights = dict(np.load(checkpoint_path, allow_pickle=False))
   sd = {}
   for key, value in weights.items():
-    sd[key] = torch.from_numpy(value)
+    if (
+        key.startswith("reassemble.")
+        or key.startswith("convs.")
+        or key.startswith("fusion_blocks.")
+        or key.startswith("project.")
+    ):
+      # Map to the dpt submodule
+      sd[f"dpt.{key}"] = torch.from_numpy(value)
+    elif key.startswith("segmentation_head."):
+      # Map to the head submodule in the subclass
+      sd[f"head.{key.replace('segmentation_head.', '')}"] = torch.from_numpy(
+          value
+      )
+
   model.load_state_dict(sd, strict=True)
-  print(f"Loaded DPT segmentation head weights ({len(sd)} tensors)")
+  print(f"Loaded decoder weights ({len(sd)} tensors)")
   return model
