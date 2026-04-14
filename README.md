@@ -36,15 +36,19 @@ See also our [demos and notebooks](#demos-and-notebooks) for a quick start.
 
 ## Demos and notebooks
 
-[![Demo-HF](https://img.shields.io/badge/Demo-HF-orange)](https://huggingface.co/spaces/google/TIPSv2): Demo on Zero-shot segmentation / Depth and Normals / Feature visualization / Supervised seg <br>
-[![Inference-Colab-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_Demo.ipynb): Inference Colab in Pytorch <br>
-[![Inference-Colab-Jax](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/scenic/notebooks/TIPS_Demo.ipynb): Inference Colab in Jax <br>
+[![Demo-HF](https://img.shields.io/badge/Demo-HF-orange)](https://huggingface.co/spaces/google/TIPSv2) --> HuggingFace demo for Feature visualization / Zero-shot segmentation / Depth and Normals estimation / Supervised segmentation <br>
+
+[![Inference-Colab-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_Demo.ipynb) --> Inference Colab in Pytorch <br>
+
+[![Inference-Colab-Jax](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/scenic/notebooks/TIPS_Demo.ipynb) --> Inference Colab in Jax <br>
 
 We also provide task-specific notebooks:
 
-[![ZS-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_zeroshot_segmentation.ipynb): Zero-shot segmentation visualization (Pytorch) <br>
-[![FG-Seg-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_foreground_segmentation_demo.ipynb): Train a linear head for foreground segmentation (Pytorch) <br>
-[![DPT-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPSv2_Segmentation_Depth_Normal_DPT_Pytorch.ipynb): Inference using a DPT head for segmentation, depth, normals (Pytorch) <br>
+[![ZS-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_zeroshot_segmentation.ipynb) --> Zero-shot segmentation visualization (Pytorch) <br>
+
+[![FG-Seg-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_foreground_segmentation_demo.ipynb) --> Train a linear head for foreground segmentation (Pytorch) <br>
+
+[![DPT-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPSv2_Segmentation_Depth_Normal_DPT_Pytorch.ipynb) --> Inference using a DPT head for segmentation, depth, normals (Pytorch) <br>
 
 ## How to use
 We provide both Pytorch and Jax (Scenic) implementations:
