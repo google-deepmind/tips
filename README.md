@@ -154,9 +154,7 @@ python run_text_encoder_inference.py \
   --text_input=${TEXT_INPUT}
 ```
 
-## Installation (JAX/Scenic)
-
-### Installation
+### Installation (JAX/Scenic)
 Similar to using Pytorch, manage dependencies with a custom environment.
 
 ```bash
