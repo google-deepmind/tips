@@ -25,7 +25,7 @@ We recommend using the latest version, TIPSv2, but still provide the earlier TIP
 [![Paper](https://img.shields.io/badge/v2-arXiv.XXXX.YYYYY-B3181B.svg)](https://arxiv.org/abs/XXXX.YYYYY)
 [![Paper](https://img.shields.io/badge/v1-arXiv.2410.16512-B3181B.svg)](https://arxiv.org/abs/2410.16512)
 
-See also our [demos](#demos) for a quick start.
+See also our [demos and notebooks](#demos-and-notebooks) for a quick start.
 
 <p align="center">
   <img
@@ -34,6 +34,17 @@ See also our [demos](#demos) for a quick start.
   >
 </p>
 
+## Demos and notebooks
+
+[![Demo-HF](https://img.shields.io/badge/Demo-HF-orange)](https://huggingface.co/spaces/google/TIPSv2): Demo on Zero-shot segmentation / Depth and Normals / Feature visualization / Supervised seg <br>
+[![Inference-Colab-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_Demo.ipynb): Inference Colab in Pytorch <br>
+[![Inference-Colab-Jax](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/scenic/notebooks/TIPS_Demo.ipynb): Inference Colab in Jax <br>
+
+We also provide task-specific notebooks:
+
+[![ZS-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_zeroshot_segmentation.ipynb): Zero-shot segmentation visualization (Pytorch) <br>
+[![FG-Seg-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_foreground_segmentation_demo.ipynb): Train a linear head for foreground segmentation (Pytorch) <br>
+[![DPT-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPSv2_Segmentation_Depth_Normal_DPT_Pytorch.ipynb): Inference using a DPT head for segmentation, depth, normals (Pytorch) <br>
 
 ## How to use
 We provide both Pytorch and Jax (Scenic) implementations:
@@ -44,6 +55,8 @@ We provide both Pytorch and Jax (Scenic) implementations:
 
 We provide links to all available checkpoints, for both Pytorch and Jax model
 definitions, together with representative evals.
+
+You can also find TIPSv2 models on HuggingFace [here](https://huggingface.co/collections/google/tipsv2).
 
 ### v2 models
 | Model size | #Params vision / text | Pytorch ckp. | Jax ckp. | PASCAL seg.↑ | NYU-depth↓ | ImageNet-KNN↑ | Flickr I→T↑ | Flickr T→I↑ | ADE150-ZS↑ |
@@ -63,20 +76,6 @@ definitions, together with representative evals.
 | L/14-HR    | 303.2M / 183.9M       | [vision][v1-pth-l14-hr-vision] \| [text][v1-pth-l14-hr-text] | [vision][v1-jax-l14-hr-vision] \| [text][v1-jax-l14-hr-text] | 83.9        | 0.372     | 82.5         | 67.8     | 93.6       | 83.5       |
 | B/14-HR    | 85.7M / 109.6M        | [vision][v1-pth-b14-hr-vision] \| [text][v1-pth-b14-hr-text] | [vision][v1-jax-b14-hr-vision] \| [text][v1-jax-b14-hr-text] | 82.9        | 0.379     | 80.0         | 62.7     | 91.3       | 79.4       |
 | S/14-HR    | 21.6M / 33.6M         | [vision][v1-pth-s14-hr-vision] \| [text][v1-pth-s14-hr-text] | [vision][v1-jax-s14-hr-vision] \| [text][v1-jax-s14-hr-text] | 80.6        | 0.425     | 75.1         | 57.7     | 86.3       | 74.7       |
-
-
-## Demos
-
-[![Demo-HF](https://img.shields.io/badge/Demo-HF-orange)](https://huggingface.co/spaces/google/TIPSv2): Demo on Zero-shot segmentation / Depth and Normals / Feature visualization / Supervised seg <br>
-[![Inference-Colab-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_Demo.ipynb): Inference Colab in Pytorch <br>
-[![Inference-Colab-Jax](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/scenic/notebooks/TIPS_Demo.ipynb): Inference Colab in Jax <br>
-
-We also provide task-specific notebooks:
-
-[![ZS-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_zeroshot_segmentation.ipynb): Zero-shot segmentation visualization (Pytorch) <br>
-[![FG-Seg-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_foreground_segmentation_demo.ipynb): Train a linear head for foreground segmentation(Pytorch) <br>
-[![DPT-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPSv2_Segmentation_Depth_Normal_DPT_Pytorch.ipynb): Inference using a DPT head for segmentation, depth, normals (Pytorch) <br>
-
 
 ## Local Installation
 To install locally instead of using the Colabs/HF, please follow the instructions below.
