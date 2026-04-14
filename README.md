@@ -25,43 +25,33 @@ This repository contains the implementation and models introduced in:
 * TIPSv2: Advancing Vision-Language Pretraining with Enhanced Patch-Text Alignment, CVPR 2026
 * TIPS: Text-Image Pretraining with Spatial Awareness, ICLR 2025
 
+## Overview
+<div style="text-align: justify;">
+  TIPSv2 is the next generation of the TIPS family of foundational image-text encoders empowering strong performance across numerous multimodal and vision tasks. Our work starts by revealing a surprising finding, where distillation unlocks superior patch-text alignment over standard pretraining, leading to distilled student models significantly surpassing their much larger teachers in this capability. We carefully investigate this phenomenon, leading to an improved pretraining recipe that upgrades our vision-language encoder significantly. Three key changes are introduced to our pretraining process (illustrated in the figure below): iBOT++ extends the patch-level self-supervised loss to all tokens for stronger dense alignment; Head-only EMA reduces training cost while retaining performance; and Multi-Granularity Captions uses PaliGemma and Gemini descriptions for richer text supervision. Combining these components, TIPSv2 demonstrates strong performance across 9 tasks and 20 datasets, generally on par with or better than recent vision encoder models, with particularly strong gains in zero-shot segmentation.
+</div>
+<br/>
+
+TIPSv2 introduces 3 pretraining improvements: iBOT++ (enhanced MIM loss), Head-only EMA (memory-efficient self-supervised losses), and Multi-granularity captions for richer text supervision (left image).
+TIPSv2 produces smoother feature maps with well-delineated objects compared to prior vision-language models (e.g., TIPS and SigLIP2). While DINOv3 also exhibits smooth feature maps, TIPSv2 shows stronger semantic focus: object boundaries are more precisely delineated and regions show granular semantic details (right image).
+
+<div align="center" style="display: flex; justify-content: center; align-items: flex-start; gap: 30px; width: 100%;">
+  <img src="./docs/images/tipsv2_block.png" style="height: 450px; width: auto;">
+  <img src="./docs/images/pca.png" style="height: 450px; width: auto;">
+</div>
+
+
+
+## How to use
 We provide both Pytorch and Jax (Scenic) implementations:
 
 - `tips/pytorch/`: PyTorch inference for the model.
 - `tips/scenic/`: Jax-based inference using the
 [scenic library](https://github.com/google-research/scenic).
 
-**Overview**
-<div style="text-align: justify;">
-  TIPSv2 is the next generation of the TIPS family of foundational image-text encoders empowering strong performance across numerous multimodal and vision tasks. Our work starts by revealing a surprising finding, where distillation unlocks superior patch-text alignment over standard pretraining, leading to distilled student models significantly surpassing their much larger teachers in this capability. We carefully investigate this phenomenon, leading to an improved pretraining recipe that upgrades our vision-language encoder significantly. Three key changes are introduced to our pretraining process (illustrated in the figure below): iBOT++ extends the patch-level self-supervised loss to all tokens for stronger dense alignment; Head-only EMA reduces training cost while retaining performance; and Multi-Granularity Captions uses PaliGemma and Gemini descriptions for richer text supervision. Combining these components, TIPSv2 demonstrates strong performance across 9 tasks and 20 datasets, generally on par with or better than recent vision encoder models, with particularly strong gains in zero-shot segmentation.
-</div>
-<br/>
-
-TIPSv2 produces smoother feature maps with well-delineated objects compared to prior vision-language models (e.g., TIPS and SigLIP2). While DINOv3 also exhibits smooth feature maps, TIPSv2 shows stronger semantic focus: object boundaries are more precisely delineated and regions show granular semantic details. We compare ViT-g models of several vision encoders, except for DINOv3, where we compare with the 6× larger ViT-7B. Select an image below to explore PCA components of patch embeddings.
-<p align="center">
-  <img
-    src="./docs/images/pca.png"
-    style="width:75%;"
-  >
-</p>
-
-
-TIPSv2 pretraining overview. TIPSv2 introduces 3 pretraining improvements: iBOT++ (enhanced MIM loss), Head-only EMA (memory-efficient self-supervised losses), and Multi-granularity captions (richer text supervision).
-
-<p align="center">
-  <img
-    src="./docs/images/tipsv2_block.png"
-    style="width:80%;"
-  >
-</p>
-
-
-## Checkpoints
 We provide links to all available checkpoints, for both Pytorch and Jax model
 definitions, together with representative evals.
 
 ### v2 models
-
 | Model size | #Params vision / text | Pytorch ckp. | Jax ckp. | PASCAL seg.↑ | NYU-depth↓ | ImageNet-KNN↑ | Flickr T→I↑ | Flickr I→T↑ | ADE150-ZS↑ |
 | :--------- | :-------------------- | :----------: | :------: | :---------: | :-------: | :----------: | :------: | :--------: | :--------: |
 | g/14       | 1.1B / 389.1M         | [vision][v2-pth-g14-vision] \| [text][v2-pth-g14-text]  | [vision][v2-jax-g14-vision] \| [text][v2-jax-g14-text]  | 85.1 | 0.334 | 83.7 | 95.1 | 85.9 | 17.8 |
@@ -80,9 +70,41 @@ definitions, together with representative evals.
 | B/14-HR    | 85.7M / 109.6M        | [vision][v1-pth-b14-hr-vision] \| [text][v1-pth-b14-hr-text] | [vision][v1-jax-b14-hr-vision] \| [text][v1-jax-b14-hr-text] | 82.9        | 0.379     | 80.0         | 62.7     | 91.3       | 79.4       |
 | S/14-HR    | 21.6M / 33.6M         | [vision][v1-pth-s14-hr-vision] \| [text][v1-pth-s14-hr-text] | [vision][v1-jax-s14-hr-vision] \| [text][v1-jax-s14-hr-text] | 80.6        | 0.425     | 75.1         | 57.7     | 86.3       | 74.7       |
 
-## Using Pytorch
 
-### Installation
+## Colabs / Hugging Face
+
+<a href="https://google-tipsv2-gpu-explorer.hf.space/">
+  <img src="https://img.shields.io/badge/HF-Space-orange" alt="HF Space" style="vertical-align: bottom;">
+</a>: Demo on Zero-shot segmentation / Depth and Normals / Feature visualization / Supervised seg <br><br>
+
+<a href="https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_Demo.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Colab Pytorch" style="vertical-align: middle;">
+</a>: Inference Colab in Pytorch <br><br>
+
+<a href="https://colab.research.google.com/github/google-deepmind/tips/blob/main/scenic/notebooks/TIPS_Demo.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Colab Scenic" style="vertical-align: middle;">
+</a>: Inference Colab in JAX <br><br>
+
+We also provide task-specific notebooks:
+
+
+<a href="https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_zeroshot_segmentation.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Colab ZS Seg Pytorch" style="vertical-align: middle;">
+</a>: Zero-shot segmentation visualization <br><br>
+
+<a href="https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_foreground_segmentation_demo.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Colab FG Seg Pytorch" style="vertical-align: middle;">
+</a>: Train a linear head for foreground segmentation <br><br>
+
+<a href="https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPSv2_Segmentation_Depth_Normal_DPT_Pytorch.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Colab DPT Pytorch" style="vertical-align: middle;">
+</a>: Inference using a DPT head (segmentation, depth, normals) <br><br>
+
+
+## Local Installation
+To install locally instead of using the Colabs/HF, please follow the instructions below.
+
+### Installation (Pytorch)
 Manage dependencies with a custom environment (eg. Conda)
 
 ```bash
@@ -152,14 +174,7 @@ python run_text_encoder_inference.py \
   --text_input=${TEXT_INPUT}
 ```
 
-We also provide a simple notebook demo:
-
-```bash
-jupyter-notebook
-```
-Then navigate to `tips/pytorch/TIPS_Demo.ipynb`.
-
-## Using Jax (Scenic)
+## Installation (JAX/Scenic)
 
 ### Installation
 Similar to using Pytorch, manage dependencies with a custom environment.
@@ -218,20 +233,20 @@ cd tips/scenic
 python run_tips_inference.py
 ```
 
-Alternatively, try the demo in the notebook:
-
-```bash
-jupyter-notebook
-```
-Then navigate to `tips/scenic/notebooks/TIPS_Demo.ipynb`.
-
 ## Citing this work
 
-The paper can be found on [arXiv](https://arxiv.org/abs/2410.16512).
+The manuscripts for TIPS v1 and v2 can be found on arXiv ([v1](https://arxiv.org/abs/2410.16512), [v2](https://arxiv.org/abs/TODO).
 Please consider citing this work using:
 
 ```
-@InProceedings{tips_paper,
+@InProceedings{tips_v2_paper,
+    Title={{TIPSv2: Advancing Vision-Language Pretraining with Enhanced Patch-Text Alignment}},
+    Author={Cao, Bingyi and Chen, Koert and Maninis, Kevis-Kokitsi and Chen, Kaifeng and Karpur, Arjun and Xia, Ye and Dua, Sahil and Dabral, Tanmaya and Han, Guangxing and Han, Bohyung and Ainslie, Joshua and Bewley, Alex and Jacob, Mithun and Wagner, Ren\'e and Ramos, Washington and Choromanski, Krzysztof and Seyedhosseini, Mojtaba and Zhou, Howard and Araujo, Andr\'e},
+    Booktitle={CVPR},
+    year={2026},
+}
+
+@InProceedings{tips_v1_paper,
     Title={{TIPS: Text-Image Pretraining with Spatial Awareness}},
     Author={Maninis, Kevis-Kokitsi and Chen, Kaifeng and Ghosh, Soham and Karpur, Arjun and Chen, Koert and Xia, Ye and Cao, Bingyi and Salz, Daniel and Han, Guangxing and Dlabal, Jan and Gnanapragasam, Dan and Seyedhosseini, Mojtaba and Zhou, Howard and Araujo, Andr\'e},
     Booktitle={ICLR},
