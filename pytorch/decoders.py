@@ -16,8 +16,7 @@
 """DPT decoder heads for dense prediction tasks.
 
 This module provides a shared DPT backbone (ReassembleBlocks + fusion) and
-task-specific decoder subclasses for segmentation, depth, and surface normals,
-mirroring the Scenic/Flax decoder hierarchy.
+task-specific decoder subclasses for segmentation, depth, and surface normals.
 
 Typical usage:
   decoder = SegmentationDecoder(num_classes=150, input_embed_dim=1024)
@@ -88,7 +87,7 @@ class FeatureFusionBlock(nn.Module):
       residual = self.residual_unit(residual)
       x = x + residual
     x = self.main_unit(x)
-    # Upsample 2x with align_corners=True (matches Scenic reference).
+    # Upsample 2x with align_corners=True
     x = F.interpolate(
         x, scale_factor=2, mode="bilinear", align_corners=True
     )
@@ -265,9 +264,39 @@ class SegmentationDecoder(Decoder):
 
 
 class DepthDecoder(Decoder):
-  """Decoder for monocular depth prediction."""
-  def __init__(self, **kwargs) -> None:
-    super().__init__(out_channels=1, **kwargs)
+  """Decoder for monocular depth prediction using classification bins."""
+
+  def __init__(self, min_depth: float = 0.001, max_depth: float = 10.0, **kwargs) -> None:
+    # Decoder requires out_channels, we pass 256 as we use channels as bins,
+    # although we bypass the head in forward().
+    super().__init__(out_channels=256, **kwargs)
+    self.min_depth = min_depth
+    self.max_depth = max_depth
+    self.register_buffer(
+        "bin_centers", torch.linspace(min_depth, max_depth, 256)
+    )
+
+  def forward(
+      self,
+      intermediate_features: List[Tuple[torch.Tensor, torch.Tensor]],
+      image_size: Optional[Tuple[int, int]] = None,
+  ) -> torch.Tensor:
+    # Bypass super().forward() to avoid the linear head applied there,
+    # and use raw DPT features as logits.
+    logits = self.dpt(intermediate_features) # (B, C, H', W')
+    # Apply ReLU and shift
+    logits = torch.relu(logits) + self.min_depth
+    # Normalize to probabilities along the channel dimension
+    probs = logits / torch.sum(logits, dim=1, keepdim=True)
+    # Compute expectation: sum(prob * bin_center)
+    depth_map = torch.einsum(
+        "bchw,c->bhw", probs, self.bin_centers.to(logits.device)
+    )
+    if image_size is not None:
+      depth_map = F.interpolate(
+          depth_map.unsqueeze(1), size=image_size, mode="bilinear", align_corners=False
+      ).squeeze(1)
+    return depth_map.unsqueeze(1)
 
 
 class NormalsDecoder(Decoder):
@@ -296,19 +325,12 @@ def load_decoder_weights(
 ) -> Decoder:
   """Load pre-converted PyTorch weights into a Decoder.
 
-  The checkpoint should be an .npz file where keys match the model's
-  state_dict parameter names and values are NumPy arrays in PyTorch layout
-  (already transposed from Flax/JAX format).
-
-  Use ``scripts/convert_segmentation_checkpoint.py`` to produce these
-  checkpoints from the original Flax/JAX .zip files.
-
   Supports both the legacy flat key format (e.g. ``reassemble.…``) and the
   new hierarchical format (e.g. ``dpt.reassemble.…``).
 
   Args:
     model: A Decoder instance (SegmentationDecoder, DepthDecoder, etc.).
-    checkpoint_path: Path to a .npz checkpoint file.
+    checkpoint_path: Path to a checkpoint file.
 
   Returns:
     The model with loaded weights.
