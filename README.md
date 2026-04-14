@@ -1,22 +1,9 @@
-
-<a href="https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_Demo.ipynb">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" style="vertical-align: middle;">
-</a>
-<a href="https://google-tipsv2-gpu-explorer.hf.space/">
-  <img src="https://img.shields.io/badge/Space-HF-orange" alt="HF Space" style="vertical-align: middle;">
-</a>
-<a href="https://huggingface.co/collections/google/tipsv2">
-  <img src="https://img.shields.io/badge/Models-HF-orange" alt="Use Models on HF" style="vertical-align: middle;">
-</a>
-<a href="https://gdm-tipsv2.github.io/">
-  <img src="https://img.shields.io/badge/Webpage-yellow" alt="Webpage" style="vertical-align: middle;">
-</a>
-<a href="https://arxiv.org/abs/TODO">
-  <img src="https://img.shields.io/badge/arXiv%20(v2)-888" alt="arXiv (v2)" style="vertical-align: middle;">
-</a>
-<a href="https://arxiv.org/abs/2410.16512">
-  <img src="https://img.shields.io/badge/arXiv%20(v1)-888" alt="arXiv (v1)" style="vertical-align: middle;">
-</a>
+[![Demo-Colab-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_Demo.ipynb)
+[![Demo-HF](https://img.shields.io/badge/Demo-HF-orange)](https://google-tipsv2-gpu-explorer.hf.space/)
+[![Models-HF](https://img.shields.io/badge/Models-HF-orange)](https://huggingface.co/collections/google/tipsv2)
+[![Webpage](https://img.shields.io/badge/Webpage-yellow)](https://gdm-tipsv2.github.io/)
+[![Paper](https://img.shields.io/badge/v2-arXiv.XXXX.YYYYY-B3181B.svg)](https://arxiv.org/abs/XXXX.YYYYY)
+[![Paper](https://img.shields.io/badge/v1-arXiv.2410.16512-B3181B.svg)](https://arxiv.org/abs/2410.16512)
 <br/>
 
 # TIPS / TIPSv2
@@ -25,20 +12,27 @@ This repository contains the implementation and models introduced in:
 * TIPSv2: Advancing Vision-Language Pretraining with Enhanced Patch-Text Alignment, CVPR 2026
 * TIPS: Text-Image Pretraining with Spatial Awareness, ICLR 2025
 
-## Overview
-<div style="text-align: justify;">
-  TIPSv2 is the next generation of the TIPS family of foundational image-text encoders empowering strong performance across numerous multimodal and vision tasks. Our work starts by revealing a surprising finding, where distillation unlocks superior patch-text alignment over standard pretraining, leading to distilled student models significantly surpassing their much larger teachers in this capability. We carefully investigate this phenomenon, leading to an improved pretraining recipe that upgrades our vision-language encoder significantly. Three key changes are introduced to our pretraining process (illustrated in the figure below): iBOT++ extends the patch-level self-supervised loss to all tokens for stronger dense alignment; Head-only EMA reduces training cost while retaining performance; and Multi-Granularity Captions uses PaliGemma and Gemini descriptions for richer text supervision. Combining these components, TIPSv2 demonstrates strong performance across 9 tasks and 20 datasets, generally on par with or better than recent vision encoder models, with particularly strong gains in zero-shot segmentation.
-</div>
-<br/>
+<p align="center">
+  <img
+    src="./docs/images/overview.png"
+    style="width:75%;"
+  >
+</p>
 
-TIPSv2 introduces 3 pretraining improvements: iBOT++ (enhanced MIM loss), Head-only EMA (memory-efficient self-supervised losses), and Multi-granularity captions for richer text supervision (left image).
-TIPSv2 produces smoother feature maps with well-delineated objects compared to prior vision-language models (e.g., TIPS and SigLIP2). While DINOv3 also exhibits smooth feature maps, TIPSv2 shows stronger semantic focus: object boundaries are more precisely delineated and regions show granular semantic details (right image).
+The **TIPS** series of models (**T**ext-**I**mage **P**retraining with **S**patial Awareness) are foundational image-text encoders built for general-purpose computer vision and multimodal applications. Our models were validated on a comprehensive suite of 9 tasks and 20 datasets, displaying excellent performance that matches or exceeds other recent vision encoders. with particularly strong spatial awareness.
 
-<div align="center" style="display: flex; justify-content: center; align-items: flex-start; gap: 30px; width: 100%;">
-  <img src="./docs/images/tipsv2_block.png" style="height: 450px; width: auto;">
-  <img src="./docs/images/pca.png" style="height: 450px; width: auto;">
-</div>
+We recommend using the latest version, TIPSv2, but still provide the earlier TIPSv1 for completeness. For a more detailed overview, please visit the <a href="https://gdm-tipsv2.github.io/">Project Webpage</a> and check out the papers:
+[![Paper](https://img.shields.io/badge/v2-arXiv.XXXX.YYYYY-B3181B.svg)](https://arxiv.org/abs/XXXX.YYYYY)
+[![Paper](https://img.shields.io/badge/v1-arXiv.2410.16512-B3181B.svg)](https://arxiv.org/abs/2410.16512)
 
+See also our [demos](#demos) for a quick start.
+
+<p align="center">
+  <img
+    src="./docs/images/pca.png"
+    style="width:60%;"
+  >
+</p>
 
 
 ## How to use
@@ -52,7 +46,7 @@ We provide links to all available checkpoints, for both Pytorch and Jax model
 definitions, together with representative evals.
 
 ### v2 models
-| Model size | #Params vision / text | Pytorch ckp. | Jax ckp. | PASCAL seg.↑ | NYU-depth↓ | ImageNet-KNN↑ | Flickr T→I↑ | Flickr I→T↑ | ADE150-ZS↑ |
+| Model size | #Params vision / text | Pytorch ckp. | Jax ckp. | PASCAL seg.↑ | NYU-depth↓ | ImageNet-KNN↑ | Flickr I→T↑ | Flickr T→I↑ | ADE150-ZS↑ |
 | :--------- | :-------------------- | :----------: | :------: | :---------: | :-------: | :----------: | :------: | :--------: | :--------: |
 | g/14       | 1.1B / 389.1M         | [vision][v2-pth-g14-vision] \| [text][v2-pth-g14-text]  | [vision][v2-jax-g14-vision] \| [text][v2-jax-g14-text]  | 85.1 | 0.334 | 83.7 | 95.1 | 85.9 | 17.8 |
 | SO/14      | 412.4M / 448.3M       | [vision][v2-pth-so14-vision] \| [text][v2-pth-so14-text]| [vision][v2-jax-so14-vision] \| [text][v2-jax-so14-text]| 85.2 | 0.339 | 82.8 | 94.8 | 84.0 | 23.3 |
@@ -61,7 +55,7 @@ definitions, together with representative evals.
 
 
 ### v1 models
-| Model size | #Params vision / text | Pytorch ckp.                                            | Jax ckp.                                                 | PASCAL seg.↑ | NYU-depth↓ | ImageNet-KNN↑ | UNED-KNN↑ | Flickr T→I↑ | Flickr I→T↑ |
+| Model size | #Params vision / text | Pytorch ckp.                                            | Jax ckp.                                                 | PASCAL seg.↑ | NYU-depth↓ | ImageNet-KNN↑ | UNED-KNN↑ | Flickr I→T↑ | Flickr T→I↑ |
 | :--------- | :-------------------- | :------------------------------------------------------: | :------------------------------------------------------: | :---------: | :-------: | :----------: | :------: | :--------: | :--------: |
 | g/14-HR    | 1.1B / 389.1M         | [vision][v1-pth-g14-hr-vision] \| [text][v1-pth-g14-hr-text] | [vision][v1-jax-g14-hr-vision] \| [text][v1-jax-g14-hr-text] | 83.1        | 0.363     | 83.2         | 68.4     | 93.8       | 83.8       |
 | g/14-LR    | 1.1B / 389.1M         | [vision][v1-pth-g14-lr-vision] \| [text][v1-pth-g14-lr-text] | [vision][v1-jax-g14-lr-vision] \| [text][v1-jax-g14-lr-text] | 82.0        | 0.390     | 83.6         | 71.5     | 93.4       | 82.1       |
@@ -71,34 +65,17 @@ definitions, together with representative evals.
 | S/14-HR    | 21.6M / 33.6M         | [vision][v1-pth-s14-hr-vision] \| [text][v1-pth-s14-hr-text] | [vision][v1-jax-s14-hr-vision] \| [text][v1-jax-s14-hr-text] | 80.6        | 0.425     | 75.1         | 57.7     | 86.3       | 74.7       |
 
 
-## Colabs / Hugging Face
+## Demos
 
-<a href="https://google-tipsv2-gpu-explorer.hf.space/">
-  <img src="https://img.shields.io/badge/HF-Space-orange" alt="HF Space" style="vertical-align: bottom;">
-</a>: Demo on Zero-shot segmentation / Depth and Normals / Feature visualization / Supervised seg <br><br>
-
-<a href="https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_Demo.ipynb">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Colab Pytorch" style="vertical-align: middle;">
-</a>: Inference Colab in Pytorch <br><br>
-
-<a href="https://colab.research.google.com/github/google-deepmind/tips/blob/main/scenic/notebooks/TIPS_Demo.ipynb">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Colab Scenic" style="vertical-align: middle;">
-</a>: Inference Colab in JAX <br><br>
+[![Demo-HF](https://img.shields.io/badge/Demo-HF-orange)](https://google-tipsv2-gpu-explorer.hf.space/): Demo on Zero-shot segmentation / Depth and Normals / Feature visualization / Supervised seg <br>
+[![Inference-Colab-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_Demo.ipynb): Inference Colab in Pytorch <br>
+[![Inference-Colab-Jax](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/scenic/notebooks/TIPS_Demo.ipynb): Inference Colab in Jax <br>
 
 We also provide task-specific notebooks:
 
-
-<a href="https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_zeroshot_segmentation.ipynb">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Colab ZS Seg Pytorch" style="vertical-align: middle;">
-</a>: Zero-shot segmentation visualization <br><br>
-
-<a href="https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_foreground_segmentation_demo.ipynb">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Colab FG Seg Pytorch" style="vertical-align: middle;">
-</a>: Train a linear head for foreground segmentation <br><br>
-
-<a href="https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPSv2_Segmentation_Depth_Normal_DPT_Pytorch.ipynb">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Colab DPT Pytorch" style="vertical-align: middle;">
-</a>: Inference using a DPT head (segmentation, depth, normals) <br><br>
+[![ZS-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_zeroshot_segmentation.ipynb): Zero-shot segmentation visualization (Pytorch) <br>
+[![FG-Seg-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_foreground_segmentation_demo.ipynb): Train a linear head for foreground segmentation(Pytorch) <br>
+[![DPT-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPSv2_Segmentation_Depth_Normal_DPT_Pytorch.ipynb): Inference using a DPT head for segmentation, depth, normals (Pytorch) <br>
 
 
 ## Local Installation
@@ -235,7 +212,8 @@ python run_tips_inference.py
 
 ## Citing this work
 
-The manuscripts for TIPS v1 and v2 can be found on arXiv ([v1](https://arxiv.org/abs/2410.16512), [v2](https://arxiv.org/abs/TODO).
+The manuscripts for TIPS v1 and v2 can be found on arXiv ([v1](https://arxiv.org/abs/2410.16512), [v2](https://arxiv.org/abs/TODO)).
+
 Please consider citing this work using:
 
 ```
