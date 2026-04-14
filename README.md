@@ -62,7 +62,7 @@ definitions, together with representative evals.
 
 You can also find TIPSv2 models on HuggingFace [here](https://huggingface.co/collections/google/tipsv2).
 
-### v2 models
+### TIPSv2 models
 | Model size | #Params vision / text | Pytorch ckp. | Jax ckp. | PASCAL seg.↑ | NYU-depth↓ | ImageNet-KNN↑ | Flickr I→T↑ | Flickr T→I↑ | ADE150-ZS↑ |
 | :--------- | :-------------------- | :----------: | :------: | :---------: | :-------: | :----------: | :------: | :--------: | :--------: |
 | g/14       | 1.1B / 389.1M         | [vision][v2-pth-g14-vision] \| [text][v2-pth-g14-text]  | [vision][v2-jax-g14-vision] \| [text][v2-jax-g14-text]  | 85.1 | 0.334 | 83.7 | 95.1 | 85.9 | 17.8 |
@@ -71,7 +71,7 @@ You can also find TIPSv2 models on HuggingFace [here](https://huggingface.co/col
 | B/14       | 85.7M / 109.6M        | [vision][v2-pth-b14-vision] \| [text][v2-pth-b14-text]  | [vision][v2-jax-b14-vision] \| [text][v2-jax-b14-text]  | 84.0 | 0.374 | 79.8 | 92.6 | 80.0 | 17.4 |
 
 
-### v1 models
+### TIPSv1 models
 | Model size | #Params vision / text | Pytorch ckp.                                            | Jax ckp.                                                 | PASCAL seg.↑ | NYU-depth↓ | ImageNet-KNN↑ | UNED-KNN↑ | Flickr I→T↑ | Flickr T→I↑ |
 | :--------- | :-------------------- | :------------------------------------------------------: | :------------------------------------------------------: | :---------: | :-------: | :----------: | :------: | :--------: | :--------: |
 | g/14-HR    | 1.1B / 389.1M         | [vision][v1-pth-g14-hr-vision] \| [text][v1-pth-g14-hr-text] | [vision][v1-jax-g14-hr-vision] \| [text][v1-jax-g14-hr-text] | 83.1        | 0.363     | 83.2         | 68.4     | 93.8       | 83.8       |
