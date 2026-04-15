@@ -13,7 +13,19 @@
 # limitations under the License.
 # ==============================================================================
 
-"""Runs TIPS inference."""
+"""Runs TIPS / TIPSv2 inference.
+
+Supports both TIPSv1 and TIPSv2 model variants.  TIPSv2 models use a
+(32, 32) positional-embedding grid instead of (16, 16).
+
+Usage (TIPSv1):
+  python run_tips_inference.py --variant=tips_oss_b14_highres_distilled \
+      --checkpoint_dir=checkpoints/ --image_path=images/example.jpg
+
+Usage (TIPSv2):
+  python run_tips_inference.py --variant=tips_v2_b14 \
+      --checkpoint_dir=checkpoints/ --image_path=images/example.jpg
+"""
 
 import argparse
 import os
@@ -30,6 +42,21 @@ from tips.scenic.models import tips
 from tips.scenic.utils import checkpoint
 from tips.scenic.utils import feature_viz
 
+# All supported variants (TIPSv1 + TIPSv2).
+_ALL_VARIANTS = (
+    # TIPSv1
+    'tips_oss_g14_highres',
+    'tips_oss_g14_lowres',
+    'tips_oss_so400m14_highres_largetext_distilled',
+    'tips_oss_l14_highres_distilled',
+    'tips_oss_b14_highres_distilled',
+    'tips_oss_s14_highres_distilled',
+    # TIPSv2
+    'tips_v2_g14',
+    'tips_v2_so14',
+    'tips_v2_l14',
+    'tips_v2_b14',
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -42,14 +69,7 @@ parser.add_argument(
     '--variant',
     type=str,
     default='tips_oss_b14_highres_distilled',
-    choices=(
-        'tips_oss_g14_highres',
-        'tips_oss_g14_lowres',
-        'tips_oss_so400m14_highres_largetext_distilled',
-        'tips_oss_l14_highres_distilled',
-        'tips_oss_b14_highres_distilled',
-        'tips_oss_s14_highres_distilled',
-    ),
+    choices=_ALL_VARIANTS,
     help='Model variant.',
 )
 parser.add_argument(
@@ -75,13 +95,15 @@ def main() -> None:
   image_path = args.image_path
 
   # Load the model configuration.
+  # TIPSv2 variants automatically get (32, 32) positional embeddings.
   model_config = tips_model_config.get_config(variant)
 
   # Load the vision encoder.
   model_vision = tips.VisionEncoder(
       variant=model_config.variant,
       pooling=model_config.pooling,
-      num_cls_tokens=model_config.num_cls_tokens)
+      num_cls_tokens=model_config.num_cls_tokens,
+      posembs=tuple(model_config.positional_embedding.shape))
   init_params_vision = model_vision.init(
       jax.random.PRNGKey(0), jnp.ones([1, *image_shape, 3]), train=False)
   params_vision = checkpoint.load_checkpoint(
@@ -114,6 +136,10 @@ def main() -> None:
   # We choose the first CLS token (the second one is better for dense tasks.).
   cls_token = feature_viz.normalize(embeddings_vision[:, 0, :])
 
+  print(f'Spatial features shape: {spatial_features.shape}')
+  print(f'Vision embeddings shape: {embeddings_vision.shape}')
+  print(f'First CLS token (first 5 dims): {cls_token[0, :5].tolist()}')
+
   # Run inference on text.
   text_input = [
       'A ship', 'holidays', 'a toy dinosaur', 'Two astronauts',
@@ -127,14 +153,26 @@ def main() -> None:
       train=False)
   embeddings_text = feature_viz.normalize(embeddings_text)
 
-  # Compute cosine similariy.
-  cos_sim = nn.softmax(
-      ((cls_token @ embeddings_text.T) /
-       params_text['temperature_contrastive']), axis=-1)
+  print(f'Text embeddings shape: {embeddings_text.shape}')
+
+  # Compute cosine similarity.
+  raw_cos_sim = cls_token @ embeddings_text.T
+  temperature = params_text['temperature_contrastive']
+  print(f'Temperature: {temperature}')
+  print(f'Raw cosine similarities (before temperature scaling):')
+  for i, t in enumerate(text_input):
+    print(f'  "{t}": {raw_cos_sim[0, i].item():.4f}')
+
+  cos_sim = nn.softmax(raw_cos_sim / temperature, axis=-1)
   label_idxs = jnp.argmax(cos_sim, axis=-1)
   cos_sim_max = jnp.max(cos_sim, axis=-1)
   label_predicted = text_input[label_idxs[0].item()]
   similarity = cos_sim_max[0].item()
+
+  print(f'Predicted label: {label_predicted}')
+  print(f'Similarity: {similarity*100:.1f}%')
+  for i, t in enumerate(text_input):
+    print(f'  "{t}": {cos_sim[0, i].item()*100:.1f}%')
 
   # Compute PCA of patch tokens.
   pca_obj = feature_viz.PCAVisualizer(spatial_features)
@@ -142,12 +180,11 @@ def main() -> None:
   image_pca = np.asarray(jax.image.resize(
       image_pca, (*image_shape, 3), method='nearest'))
 
-  # Display the results.
-  cv2.imshow(
-      f'{label_predicted},  prob: {similarity*100:.1f}%',
-      np.concatenate([image, image_pca], axis=1)[..., ::-1])
-  cv2.waitKey(0)
-  cv2.destroyAllWindows()
+  # Save the results instead of displaying.
+  output_img = np.concatenate([image, image_pca], axis=1)[..., ::-1]
+  output_img = (output_img * 255).astype(np.uint8)
+  cv2.imwrite('output.jpg', output_img)
+  print(f'Saved output image to output.jpg')
 
 
 if __name__ == '__main__':

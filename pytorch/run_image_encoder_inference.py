@@ -13,12 +13,17 @@
 # limitations under the License.
 # ==============================================================================
 
-r"""Running TIPS (https://arxiv.org/abs/2410.16512) ViT-g model inference.
+r"""Running TIPS / TIPSv2 image encoder inference.
+
+Supports both TIPSv1 and TIPSv2 model variants.  TIPSv2 models use a (32, 32)
+positional-embedding grid instead of (16, 16).
 
 Usage:
 ```python
-python run_image_encoder_inference.py --model_path=${PATH_TO_LOW_RES_CHECKPOINT} \
-    --image_file=${PATH_TO_IMAGE} --is_low_res --model_variant=g
+python run_image_encoder_inference.py \
+    --model_path=${PATH_TO_CHECKPOINT} \
+    --image_file=${PATH_TO_IMAGE} \
+    --model_variant=g
 ```
 """
 
@@ -49,14 +54,16 @@ parser.add_argument(
 parser.add_argument(
     '--is_low_res',
     action='store_true',
-    help='Whether the model is low-resolution.',
+    help='Whether the model is low-resolution (224px instead of 448px).',
 )
 parser.add_argument(
     '--model_variant',
     default=None,
     required=True,
+    choices=['S', 'B', 'L', 'So400m', 'g'],
     help='The variant of the model.',
 )
+
 
 
 def main(args):
@@ -77,7 +84,7 @@ def main(args):
   for key in checkpoint:
     checkpoint[key] = torch.tensor(checkpoint[key])
 
-  # Run inference on the image.
+  # Read and pre-process the image.
   with open(args.image_file, 'rb') as fd:
     image_bytes = io.BytesIO(fd.read())
     pil_image = Image.open(image_bytes)
@@ -114,6 +121,8 @@ def main(args):
     ).clip(min=1e-3)
     print('First cls token: ', first_cls_token.tolist())
     print('Second cls token: ', second_cls_token.tolist())
+
+
 
 
 if __name__ == '__main__':
