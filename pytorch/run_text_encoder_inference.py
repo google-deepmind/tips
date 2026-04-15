@@ -98,7 +98,8 @@ def main(args):
   pytorch_weights_text = {}
   for key, value in np_weights_text.items():
     pytorch_weights_text[key] = torch.from_numpy(value)
-  pytorch_weights_text.pop('temperature')
+  pytorch_weights_text.pop('temperature', None)
+  pytorch_weights_text.pop('temperature_contrastive', None)
 
   with torch.no_grad():
     # Define the text model.
