@@ -102,7 +102,8 @@ def main() -> None:
   model_vision = tips.VisionEncoder(
       variant=model_config.variant,
       pooling=model_config.pooling,
-      num_cls_tokens=model_config.num_cls_tokens)
+      num_cls_tokens=model_config.num_cls_tokens,
+      posembs=tuple(model_config.positional_embedding.shape))
   init_params_vision = model_vision.init(
       jax.random.PRNGKey(0), jnp.ones([1, *image_shape, 3]), train=False)
   params_vision = checkpoint.load_checkpoint(
@@ -155,9 +156,14 @@ def main() -> None:
   print(f'Text embeddings shape: {embeddings_text.shape}')
 
   # Compute cosine similarity.
-  cos_sim = nn.softmax(
-      ((cls_token @ embeddings_text.T) /
-       params_text['temperature_contrastive']), axis=-1)
+  raw_cos_sim = cls_token @ embeddings_text.T
+  temperature = params_text['temperature_contrastive']
+  print(f'Temperature: {temperature}')
+  print(f'Raw cosine similarities (before temperature scaling):')
+  for i, t in enumerate(text_input):
+    print(f'  "{t}": {raw_cos_sim[0, i].item():.4f}')
+
+  cos_sim = nn.softmax(raw_cos_sim / temperature, axis=-1)
   label_idxs = jnp.argmax(cos_sim, axis=-1)
   cos_sim_max = jnp.max(cos_sim, axis=-1)
   label_predicted = text_input[label_idxs[0].item()]
