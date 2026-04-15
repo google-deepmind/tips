@@ -190,7 +190,7 @@ def main(args):
       )
       # intermediate is a tuple of (patch_tokens, cls_token) per layer.
       intermediate_features = [
-          (cls.unsqueeze(1), patches) for patches, cls in intermediate
+          (cls, patches) for patches, cls in intermediate
       ]
 
       decoder = Decoder(

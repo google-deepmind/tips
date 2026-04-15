@@ -163,12 +163,11 @@ def main() -> None:
   image_pca = np.asarray(jax.image.resize(
       image_pca, (*image_shape, 3), method='nearest'))
 
-  # Display the results.
-  cv2.imshow(
-      f'{label_predicted},  prob: {similarity*100:.1f}%',
-      np.concatenate([image, image_pca], axis=1)[..., ::-1])
-  cv2.waitKey(0)
-  cv2.destroyAllWindows()
+  # Save the results instead of displaying
+  output_img = np.concatenate([image, image_pca], axis=1)[..., ::-1]
+  output_img = (output_img * 255).astype(np.uint8)
+  cv2.imwrite('output.jpg', output_img)
+  print(f"Saved output image to output.jpg with label: {label_predicted}")
 
 
 if __name__ == '__main__':
