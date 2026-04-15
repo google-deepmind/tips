@@ -2,7 +2,7 @@
 [![Demo-HF](https://img.shields.io/badge/Demo-HF-orange)](https://huggingface.co/spaces/google/TIPSv2)
 [![Models-HF](https://img.shields.io/badge/Models-HF-orange)](https://huggingface.co/collections/google/tipsv2)
 [![Webpage](https://img.shields.io/badge/Webpage-darkgreen)](https://gdm-tipsv2.github.io/)
-[![Paper](https://img.shields.io/badge/TIPSv2-arXiv.XXXX.YYYYY-B3181B.svg)](https://arxiv.org/abs/XXXX.YYYYY)
+[![Paper](https://img.shields.io/badge/TIPSv2-arXiv.2604.12012-B3181B.svg)](https://arxiv.org/abs/2604.12012)
 [![Paper](https://img.shields.io/badge/TIPSv1-arXiv.2410.16512-B3181B.svg)](https://arxiv.org/abs/2410.16512)
 <br/>
 
@@ -22,7 +22,7 @@ This repository contains the implementation and models introduced in:
 The **TIPS** series of models (**T**ext-**I**mage **P**retraining with **S**patial Awareness) are foundational image-text encoders built for general-purpose computer vision and multimodal applications. Our models were validated on a comprehensive suite of 9 tasks and 20 datasets, displaying excellent performance that matches or exceeds other recent vision encoders, with particularly strong spatial awareness.
 
 We recommend using the latest version, TIPSv2, but still provide the earlier TIPSv1 for completeness. For a more detailed overview, please visit the <a href="https://gdm-tipsv2.github.io/">Project Webpage</a> and check out the papers:
-[![Paper](https://img.shields.io/badge/TIPSv2-arXiv.XXXX.YYYYY-B3181B.svg)](https://arxiv.org/abs/XXXX.YYYYY)
+[![Paper](https://img.shields.io/badge/TIPSv2-arXiv.2604.12012-B3181B.svg)](https://arxiv.org/abs/2604.12012)
 [![Paper](https://img.shields.io/badge/TIPSv1-arXiv.2410.16512-B3181B.svg)](https://arxiv.org/abs/2410.16512)
 
 See also our [demos and notebooks](#demos-and-notebooks) for a quick start.
