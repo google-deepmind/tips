@@ -135,6 +135,10 @@ def main() -> None:
   # We choose the first CLS token (the second one is better for dense tasks.).
   cls_token = feature_viz.normalize(embeddings_vision[:, 0, :])
 
+  print(f'Spatial features shape: {spatial_features.shape}')
+  print(f'Vision embeddings shape: {embeddings_vision.shape}')
+  print(f'First CLS token (first 5 dims): {cls_token[0, :5].tolist()}')
+
   # Run inference on text.
   text_input = [
       'A ship', 'holidays', 'a toy dinosaur', 'Two astronauts',
@@ -148,7 +152,9 @@ def main() -> None:
       train=False)
   embeddings_text = feature_viz.normalize(embeddings_text)
 
-  # Compute cosine similariy.
+  print(f'Text embeddings shape: {embeddings_text.shape}')
+
+  # Compute cosine similarity.
   cos_sim = nn.softmax(
       ((cls_token @ embeddings_text.T) /
        params_text['temperature_contrastive']), axis=-1)
@@ -157,17 +163,22 @@ def main() -> None:
   label_predicted = text_input[label_idxs[0].item()]
   similarity = cos_sim_max[0].item()
 
+  print(f'Predicted label: {label_predicted}')
+  print(f'Similarity: {similarity*100:.1f}%')
+  for i, t in enumerate(text_input):
+    print(f'  "{t}": {cos_sim[0, i].item()*100:.1f}%')
+
   # Compute PCA of patch tokens.
   pca_obj = feature_viz.PCAVisualizer(spatial_features)
   image_pca = pca_obj(spatial_features)[0]
   image_pca = np.asarray(jax.image.resize(
       image_pca, (*image_shape, 3), method='nearest'))
 
-  # Save the results instead of displaying
+  # Save the results instead of displaying.
   output_img = np.concatenate([image, image_pca], axis=1)[..., ::-1]
   output_img = (output_img * 255).astype(np.uint8)
   cv2.imwrite('output.jpg', output_img)
-  print(f"Saved output image to output.jpg with label: {label_predicted}")
+  print(f'Saved output image to output.jpg')
 
 
 if __name__ == '__main__':
