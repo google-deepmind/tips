@@ -48,8 +48,6 @@ We also provide task-specific notebooks:
 
 [![FG-Seg-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPS_foreground_segmentation_demo.ipynb) --> Train a linear head for foreground segmentation (Pytorch) <br>
 
-[![DPT-Pytorch](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/google-deepmind/tips/blob/main/pytorch/TIPSv2_Segmentation_Depth_Normal_DPT_Pytorch.ipynb) --> Inference using a DPT head for segmentation, depth, normals (Pytorch) <br>
-
 ## How to use
 We provide both Pytorch and Jax (Scenic) implementations:
 
