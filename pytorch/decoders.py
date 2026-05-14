@@ -345,49 +345,218 @@ _LEGACY_KEY_PREFIXES = {
     "pixel_normals.": "head.",
 }
 
+# Scenic/Flax head param names -> PyTorch head.*
+_SCENIC_HEAD_NAMES = {
+    "pixel_segmentation",
+    "pixel_depth_classif",
+    "pixel_depth_regress",
+    "pixel_normals",
+    "segmentation_head",
+}
+
+# ConvTranspose keys that need spatial flipping.
+_CONV_TRANSPOSE_KEYS = {
+    'dpt.reassemble.resize_layers.0.weight',
+    'dpt.reassemble.resize_layers.1.weight',
+}
+
+
+def _is_scenic_format(keys):
+  """Check if checkpoint keys use Scenic/Flax naming (``/`` separators)."""
+  return any('/' in k for k in keys)
+
+
+def _convert_scenic_checkpoint(weights):
+  """Convert Scenic/Flax checkpoint to PyTorch state_dict.
+
+  Scenic checkpoints use Flax parameter tree naming:
+    decoder/dpt/reassemble_blocks/out_projection_0/kernel
+  which maps to PyTorch:
+    dpt.reassemble.out_projections.0.weight
+
+  Weight conversions:
+    - Conv kernels: (H, W, Cin, Cout) -> (Cout, Cin, H, W)
+    - ConvTranspose kernels: same + 180-degree spatial flip
+    - Dense/Linear kernels: (in, out) -> (out, in)
+    - Biases: direct copy
+  """
+  sd = {}
+
+  # Build a nested dict from flat Scenic keys
+  tree = {}
+  for key, value in weights.items():
+    # Strip "decoder/" prefix if present.
+    k = key[len("decoder/"):] if key.startswith("decoder/") else key
+    parts = k.split("/")
+    d = tree
+    for p in parts[:-1]:
+      d = d.setdefault(p, {})
+    d[parts[-1]] = np.array(value)
+
+  dpt_params = tree.get("dpt", tree)
+
+  # --- ReassembleBlocks ---
+  rb = dpt_params.get("reassemble_blocks", {})
+  for i in range(4):
+    # out_projections (Conv2d 1x1)
+    op = rb.get(f"out_projection_{i}", {})
+    if "kernel" in op:
+      sd[f"dpt.reassemble.out_projections.{i}.weight"] = torch.from_numpy(
+          op["kernel"].transpose(3, 2, 0, 1).copy()
+      )
+    if "bias" in op:
+      sd[f"dpt.reassemble.out_projections.{i}.bias"] = torch.from_numpy(
+          op["bias"].copy()
+      )
+    # readout_projects (Linear)
+    rp = rb.get(f"readout_projects_{i}", {})
+    if "kernel" in rp:
+      sd[f"dpt.reassemble.readout_projects.{i}.weight"] = torch.from_numpy(
+          rp["kernel"].T.copy()
+      )
+    if "bias" in rp:
+      sd[f"dpt.reassemble.readout_projects.{i}.bias"] = torch.from_numpy(
+          rp["bias"].copy()
+      )
+
+  # resize_layers: 0=ConvTranspose, 1=ConvTranspose, 2=Identity, 3=Conv
+  for idx in [0, 1]:
+    rl = rb.get(f"resize_layers_{idx}", {})
+    if "kernel" in rl:
+      w = rl["kernel"][::-1, ::-1, :, :].copy()  # 180-degree spatial flip
+      sd[f"dpt.reassemble.resize_layers.{idx}.weight"] = torch.from_numpy(
+          w.transpose(2, 3, 0, 1).copy()
+      )
+    if "bias" in rl:
+      sd[f"dpt.reassemble.resize_layers.{idx}.bias"] = torch.from_numpy(
+          rl["bias"].copy()
+      )
+  # resize_layers_2 = Identity (no weights)
+  rl3 = rb.get("resize_layers_3", {})
+  if "kernel" in rl3:
+    sd["dpt.reassemble.resize_layers.3.weight"] = torch.from_numpy(
+        rl3["kernel"].transpose(3, 2, 0, 1).copy()
+    )
+  if "bias" in rl3:
+    sd["dpt.reassemble.resize_layers.3.bias"] = torch.from_numpy(
+        rl3["bias"].copy()
+    )
+
+  # --- Convs (3x3, no bias) ---
+  for i in range(4):
+    c = dpt_params.get(f"convs_{i}", {})
+    if "kernel" in c:
+      sd[f"dpt.convs.{i}.weight"] = torch.from_numpy(
+          c["kernel"].transpose(3, 2, 0, 1).copy()
+      )
+
+  # --- Fusion blocks ---
+  for i in range(4):
+    fb = dpt_params.get(f"fusion_blocks_{i}", {})
+    if i == 0:
+      # No residual unit, only 1 PreActResidualConvUnit -> main_unit
+      pacu = fb.get("PreActResidualConvUnit_0", {})
+      for cname in ["conv1", "conv2"]:
+        if cname in pacu and "kernel" in pacu[cname]:
+          sd[f"dpt.fusion_blocks.{i}.main_unit.{cname}.weight"] = (
+              torch.from_numpy(
+                  pacu[cname]["kernel"].transpose(3, 2, 0, 1).copy()
+              )
+          )
+    else:
+      # Residual unit (index 0) + main unit (index 1)
+      pacu0 = fb.get("PreActResidualConvUnit_0", {})
+      pacu1 = fb.get("PreActResidualConvUnit_1", {})
+      for cname in ["conv1", "conv2"]:
+        if cname in pacu0 and "kernel" in pacu0[cname]:
+          sd[f"dpt.fusion_blocks.{i}.residual_unit.{cname}.weight"] = (
+              torch.from_numpy(
+                  pacu0[cname]["kernel"].transpose(3, 2, 0, 1).copy()
+              )
+          )
+        if cname in pacu1 and "kernel" in pacu1[cname]:
+          sd[f"dpt.fusion_blocks.{i}.main_unit.{cname}.weight"] = (
+              torch.from_numpy(
+                  pacu1[cname]["kernel"].transpose(3, 2, 0, 1).copy()
+              )
+          )
+    # out_conv (Conv2d 1x1) -- Scenic names it Conv_0
+    oc = fb.get("Conv_0", fb.get("out_conv", {}))
+    if "kernel" in oc:
+      sd[f"dpt.fusion_blocks.{i}.out_conv.weight"] = torch.from_numpy(
+          oc["kernel"].transpose(3, 2, 0, 1).copy()
+      )
+    if "bias" in oc:
+      sd[f"dpt.fusion_blocks.{i}.out_conv.bias"] = torch.from_numpy(
+          oc["bias"].copy()
+      )
+
+  # --- Project ---
+  proj = dpt_params.get("project", {})
+  if "kernel" in proj:
+    sd["dpt.project.weight"] = torch.from_numpy(
+        proj["kernel"].transpose(3, 2, 0, 1).copy()
+    )
+  if "bias" in proj:
+    sd["dpt.project.bias"] = torch.from_numpy(proj["bias"].copy())
+
+  # --- Task head (Dense/Linear) ---
+  for head_name in _SCENIC_HEAD_NAMES:
+    if head_name in tree:
+      h = tree[head_name]
+      if "kernel" in h:
+        sd["head.weight"] = torch.from_numpy(h["kernel"].T.copy())
+      if "bias" in h:
+        sd["head.bias"] = torch.from_numpy(h["bias"].copy())
+      break
+
+  return sd
+
 
 def load_decoder_weights(
     model: Decoder,
     checkpoint_path: str,
 ) -> Decoder:
-  """Load pre-converted PyTorch weights into a Decoder.
+  """Load weights into a Decoder from a checkpoint file.
 
-  Supports both the legacy flat key format (e.g. ``reassemble.…``) and the
-  new hierarchical format (e.g. ``dpt.reassemble.…``).
+  Supports three checkpoint formats:
+    1. Scenic/Flax format: keys with ``/`` separators and ``kernel``/``bias``
+       naming (e.g. ``decoder/dpt/reassemble_blocks/out_projection_0/kernel``).
+       Weights are automatically transposed from Flax layout to PyTorch layout.
+    2. Legacy flat format: keys like ``reassemble.…`` that get remapped to
+       ``dpt.reassemble.…``.
+    3. PyTorch hierarchical format: keys already match the model state_dict.
 
   Args:
     model: A Decoder instance (SegmentationDecoder, DepthDecoder, etc.).
-    checkpoint_path: Path to a checkpoint file.
+    checkpoint_path: Path to a ``.npz`` checkpoint file.
 
   Returns:
     The model with loaded weights.
   """
   weights = dict(np.load(checkpoint_path, allow_pickle=False))
 
-  # ConvTranspose kernel names — these need spatial flipping.
-  # Flax ConvTranspose uses transpose_kernel=False (no kernel flip),
-  # while PyTorch ConvTranspose2d always flips. To compensate, we
-  # rotate the kernel 180° (flip both spatial dims) during loading.
-  _CONV_TRANSPOSE_KEYS = {
-      'dpt.reassemble.resize_layers.0.weight',
-      'dpt.reassemble.resize_layers.1.weight',
-      'reassemble.resize_layers.0.weight',
-      'reassemble.resize_layers.1.weight',
-  }
+  if _is_scenic_format(weights):
+    sd = _convert_scenic_checkpoint(weights)
+  else:
+    # Legacy flat or PyTorch hierarchical format.
+    sd = {}
+    for key, value in weights.items():
+      new_key = key
+      for old_prefix, new_prefix in _LEGACY_KEY_PREFIXES.items():
+        if key.startswith(old_prefix):
+          new_key = new_prefix + key[len(old_prefix):]
+          break
+      t = torch.from_numpy(value)
+      # Flip ConvTranspose kernels spatially for Flax->PyTorch parity.
+      if new_key in _CONV_TRANSPOSE_KEYS and t.ndim == 4:
+        t = t.flip([2, 3])
+      sd[new_key] = t
 
-  sd = {}
-  for key, value in weights.items():
-    new_key = key
-    # Remap legacy flat keys to hierarchical names.
-    for old_prefix, new_prefix in _LEGACY_KEY_PREFIXES.items():
-      if key.startswith(old_prefix):
-        new_key = new_prefix + key[len(old_prefix):]
-        break
-    t = torch.from_numpy(value)
-    # Flip ConvTranspose kernels spatially for Flax→PyTorch parity.
-    if new_key in _CONV_TRANSPOSE_KEYS and t.ndim == 4:
-      t = t.flip([2, 3])  # Rotate 180° (flip H and W dims)
-    sd[new_key] = t
+  # Add registered buffers not in checkpoint (e.g. bin_centers).
+  for name, buf in model.named_buffers():
+    if name not in sd:
+      sd[name] = buf
 
   model.load_state_dict(sd, strict=True)
   print(f"Loaded decoder weights from {checkpoint_path} ({len(sd)} tensors)")
