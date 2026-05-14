@@ -136,7 +136,8 @@ class ReassembleBlocks(nn.Module):
         x_flat = x.flatten(2).transpose(1, 2)
         readout = cls_token.unsqueeze(1).expand(-1, x_flat.shape[1], -1)
         x_cat = torch.cat([x_flat, readout], dim=-1)
-        x_proj = F.gelu(self.readout_projects[i](x_cat))
+        # JAX GELU uses tanh approximation by default.
+        x_proj = F.gelu(self.readout_projects[i](x_cat), approximate='tanh')
         x = x_proj.transpose(1, 2).reshape(b, d, h, w)
       x = self.out_projections[i](x)
       x = self.resize_layers[i](x)
@@ -164,8 +165,10 @@ class DPTHead(nn.Module):
       channels: int = 256,
       post_process_channels: Tuple[int, ...] = (128, 256, 512, 1024),
       readout_type: str = "project",
+      output_activation: bool = False,
   ) -> None:
     super().__init__()
+    self.output_activation = output_activation
     self.reassemble = ReassembleBlocks(
         input_embed_dim=input_embed_dim,
         out_channels=post_process_channels,
@@ -196,7 +199,10 @@ class DPTHead(nn.Module):
       out = self.fusion_blocks[i](out, residual=x[-(i + 1)])
 
     out = self.project(out)
-    out = F.relu(out)
+    # NOTE: Scenic's dpt_head_from_config sets output_activation=False,
+    # so NO ReLU is applied after the project layer by default.
+    if self.output_activation:
+      out = F.relu(out)
     return out
 
 
@@ -218,6 +224,7 @@ class Decoder(nn.Module):
       channels: int = 256,
       post_process_channels: Tuple[int, ...] = (128, 256, 512, 1024),
       readout_type: str = "project",
+      output_activation: bool = False,
   ) -> None:
     super().__init__()
     self.channels = channels
@@ -227,6 +234,7 @@ class Decoder(nn.Module):
         channels=channels,
         post_process_channels=post_process_channels,
         readout_type=readout_type,
+        output_activation=output_activation,
     )
     # Common head for all dense prediction tasks
     self.head = nn.Linear(self.channels, self.out_channels)
@@ -356,6 +364,17 @@ def load_decoder_weights(
   """
   weights = dict(np.load(checkpoint_path, allow_pickle=False))
 
+  # ConvTranspose kernel names — these need spatial flipping.
+  # Flax ConvTranspose uses transpose_kernel=False (no kernel flip),
+  # while PyTorch ConvTranspose2d always flips. To compensate, we
+  # rotate the kernel 180° (flip both spatial dims) during loading.
+  _CONV_TRANSPOSE_KEYS = {
+      'dpt.reassemble.resize_layers.0.weight',
+      'dpt.reassemble.resize_layers.1.weight',
+      'reassemble.resize_layers.0.weight',
+      'reassemble.resize_layers.1.weight',
+  }
+
   sd = {}
   for key, value in weights.items():
     new_key = key
@@ -364,7 +383,11 @@ def load_decoder_weights(
       if key.startswith(old_prefix):
         new_key = new_prefix + key[len(old_prefix):]
         break
-    sd[new_key] = torch.from_numpy(value)
+    t = torch.from_numpy(value)
+    # Flip ConvTranspose kernels spatially for Flax→PyTorch parity.
+    if new_key in _CONV_TRANSPOSE_KEYS and t.ndim == 4:
+      t = t.flip([2, 3])  # Rotate 180° (flip H and W dims)
+    sd[new_key] = t
 
   model.load_state_dict(sd, strict=True)
   print(f"Loaded decoder weights from {checkpoint_path} ({len(sd)} tensors)")
