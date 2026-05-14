@@ -199,7 +199,7 @@ class DPTHead(nn.Module):
       out = self.fusion_blocks[i](out, residual=x[-(i + 1)])
 
     out = self.project(out)
-    # NOTE: Scenic's dpt_head_from_config sets output_activation=False,
+    # NOTE: By default, the reference implementation does not apply output activation,
     # so NO ReLU is applied after the project layer by default.
     if self.output_activation:
       out = F.relu(out)
@@ -304,7 +304,7 @@ class DepthDecoder(Decoder):
     #    Output shape: (B, num_depth_bins, H', W')
     logits = super().forward(intermediate_features)
 
-    # 2. Classification-based depth prediction (following Scenic/AdaBins):
+    # 2. Classification-based depth prediction:
     #    relu + shift -> linear normalisation -> expectation over bins.
     logits = torch.relu(logits) + self.min_depth
     probs = logits / torch.sum(logits, dim=1, keepdim=True)
@@ -367,9 +367,9 @@ def _is_scenic_format(keys):
 
 
 def _convert_scenic_checkpoint(weights):
-  """Convert Scenic/Flax checkpoint to PyTorch state_dict.
+  """Convert Flax parameter tree checkpoint to PyTorch state_dict.
 
-  Scenic checkpoints use Flax parameter tree naming:
+  These checkpoints use Flax parameter tree naming:
     decoder/dpt/reassemble_blocks/out_projection_0/kernel
   which maps to PyTorch:
     dpt.reassemble.out_projections.0.weight
@@ -520,7 +520,7 @@ def load_decoder_weights(
   """Load weights into a Decoder from a checkpoint file.
 
   Supports three checkpoint formats:
-    1. Scenic/Flax format: keys with ``/`` separators and ``kernel``/``bias``
+    1. Flax format: keys with ``/`` separators and ``kernel``/``bias``
        naming (e.g. ``decoder/dpt/reassemble_blocks/out_projection_0/kernel``).
        Weights are automatically transposed from Flax layout to PyTorch layout.
     2. Legacy flat format: keys like ``reassemble.…`` that get remapped to
