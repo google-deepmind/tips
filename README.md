@@ -256,8 +256,8 @@ This is not an official Google product.
 
 [v2-jax-g14-vision]:  https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_g14_vision.npz
 [v2-jax-g14-text]:    https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_g14_text.npz
-[v2-jax-so14-vision]: https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_so14_vision.npz
-[v2-jax-so14-text]:   https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_so14_text.npz
+[v2-jax-so14-vision]: https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_so400m14_vision.npz
+[v2-jax-so14-text]:   https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_so400m14_text.npz
 [v2-jax-l14-vision]:  https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_l14_vision.npz
 [v2-jax-l14-text]:    https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_l14_text.npz
 [v2-jax-b14-vision]:  https://storage.googleapis.com/tips_data/v2_0/checkpoints/scenic/tips_v2_b14_vision.npz
